@@ -1,5 +1,9 @@
 <script lang="ts">
 	import {resumeAudio, playMusicLoop} from '../theater/audio';
+	import {generateUsher, generateVortexMan} from '../engine/sprites';
+
+	// 1 = НАСТРОЙКИ enters debug maze, 0 = shows bileter sprite
+	const DEBUG_ROOMS = 0;
 
 	type Props = {
 		onNewGame: () => void;
@@ -14,6 +18,9 @@
 	let theaterCanvas: HTMLCanvasElement | undefined = $state();
 	let menuCanvas: HTMLCanvasElement | undefined = $state();
 	let hoveredButton: number = $state(-1);
+	let bileterVisible = $state(false);
+	let bileterSprite: ImageData | undefined = $state();
+	let bileterCanvas: HTMLCanvasElement | undefined = $state();
 
 	// Start title music
 	$effect(() => {
@@ -55,6 +62,18 @@
 		drawMenu(menuCanvas, hoveredButton, titleVisible, buttonsVisible);
 	});
 
+	// Draw bileter sprite on its canvas
+	$effect(() => {
+		if (!bileterCanvas || !bileterSprite) {
+			return;
+		}
+
+		const ctx = bileterCanvas.getContext('2d');
+		if (ctx) {
+			ctx.putImageData(bileterSprite, 0, 0);
+		}
+	});
+
 	function handleNewGame() {
 		resumeAudio();
 		onNewGame();
@@ -68,15 +87,17 @@
 	}
 
 	function handleSettings() {
-		if (onDebugMaze) {
+		if (DEBUG_ROOMS && onDebugMaze) {
 			onDebugMaze();
 			return;
 		}
 
-		// "Настройки" crashes the game — close the window
-		globalThis.close();
-		// Fallback: navigate away
-		location.href = 'about:blank';
+		// Show bileter sprite (1/10 spiral face)
+		bileterSprite ||= Math.random() < 0.1
+			? generateVortexMan()
+			: generateUsher();
+
+		bileterVisible = !bileterVisible;
 	}
 
 	// ── Menu canvas click detection ─────────────────────────────
@@ -349,4 +370,14 @@
 		onmousemove={onMenuMove}
 		onmouseleave={onMenuLeave}
 	></canvas>
+
+	{#if bileterVisible && bileterSprite}
+		<canvas
+			bind:this={bileterCanvas}
+			class="pointer-events-none absolute"
+			width={bileterSprite.width}
+			height={bileterSprite.height}
+			style="image-rendering: pixelated; width: {bileterSprite.width * 4}px; height: {bileterSprite.height * 4}px;"
+		></canvas>
+	{/if}
 </div>
