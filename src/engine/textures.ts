@@ -761,6 +761,59 @@ export function generateEmptyEasel(): ImageData {
 }
 
 /** Build all wall textures. Keyed by Tile enum value. */
+/** Velvet rope barrier — red velvet ropes on brass posts. */
+function generateVelvetRope(): ImageData {
+	const tex = createTex();
+	const rng = seededRand(777);
+
+	// Dark background (lobby floor visible behind)
+	for (let y = 0; y < TEX_SIZE; y++) {
+		for (let x = 0; x < TEX_SIZE; x++) {
+			const base = 25 + Math.floor(rng() * 8) - 4;
+			setPixel(tex, x, y, base, base - 2, base - 5);
+		}
+	}
+
+	// Two brass posts
+	for (const px of [14, 50]) {
+		for (let y = 8; y < 60; y++) {
+			for (let dx = -2; dx <= 2; dx++) {
+				const shine = Math.abs(dx) < 2 ? 30 : 0;
+				setPixel(tex, px + dx, y, 160 + shine, 130 + shine, 40);
+			}
+		}
+
+		// Post caps (brass ball)
+		for (let dy = -3; dy <= 0; dy++) {
+			for (let dx = -3; dx <= 3; dx++) {
+				if (dx * dx + dy * dy <= 9) {
+					setPixel(tex, px + dx, 8 + dy, 190, 160, 55);
+				}
+			}
+		}
+
+		// Post bases
+		for (let dx = -3; dx <= 3; dx++) {
+			setPixel(tex, px + dx, 59, 140, 110, 35);
+			setPixel(tex, px + dx, 60, 150, 120, 40);
+		}
+	}
+
+	// Red velvet rope — catenary curve between posts
+	for (let x = 16; x <= 48; x++) {
+		const t = (x - 16) / 32;
+		const sag = Math.sin(t * Math.PI) * 8;
+		const ropeY = Math.floor(24 + sag);
+		for (let dy = -2; dy <= 2; dy++) {
+			const fold = Math.sin((x + dy) * 0.5) * 0.3 + 0.7;
+			const base = Math.floor(140 * fold);
+			setPixel(tex, x, ropeY + dy, base, Math.floor(base * 0.12), Math.floor(base * 0.1));
+		}
+	}
+
+	return tex;
+}
+
 export function buildTextureAtlas(): TextureAtlas {
 	const atlas: TextureAtlas = new Map();
 	atlas.set(1, generateStoneWall());
@@ -781,5 +834,6 @@ export function buildTextureAtlas(): TextureAtlas {
 	atlas.set(15, generateMazePanel());
 	atlas.set(16, generateDoubleDoor());
 	atlas.set(17, generateRearDoor());
+	atlas.set(18, generateVelvetRope());
 	return atlas;
 }

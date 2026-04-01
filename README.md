@@ -1,53 +1,42 @@
-# Samosbor
+# ТЕАТР
 
-Web-first rewrite of **Samosbor**, a procedural settlement and world simulation currently built with Svelte 5, Tailwind CSS 4, and a custom WebGL2 renderer. Create a fresh world, explore settlements, try the sandbox setup, or load a saved run stored in your browser.
+Психологический хоррор в духе крипипасты. Ретро-рейкастер 320×200, советский театр, нарастающее безумие.
 
-## Features
+Билетёр встречает вас в фойе. Коридор ведёт в темноту. С каждым циклом реальность искажается сильнее — пока потустороннее не прорывается наружу.
 
-- Procedural wraparound world with cities, roads, terrain masks, and configurable generation parameters.
-- Local saves in `localStorage` (autosave + manual load screen).
-- Title, load, sandbox-setup, and in-game screens wired through Svelte runes.
-- Background music with in-app mute toggle.
-- Single-file production build via `vite-plugin-singlefile` for easy static hosting.
+## Что внутри
 
-## Quick start
+- **Давящий хоррор без боя** — только исследование, побег и постепенная потеря рассудка.
+- **12 фаз нарастающего ужаса**: от обычного фойе до бесконечного коридора и лабиринта с охотящейся сущностью.
+- **Вихреголовый человек** — спиральная пустота вместо лица, затягивающая черты внутрь.
+- **Процедурная генерация всего**: текстуры, спрайты, лабиринты, текст афиш, звук — ничего не загружается извне.
+- **Пиксельный минимализм** — 320×200, без сглаживания, туман и глитчи.
+- **Городские легенды** — почти-осмысленные фразы на афишах, искажённая речь билетёра, потустороннее за стеной.
 
-Prerequisites: Node.js 18+ and npm.
+## Запуск
 
 ```bash
 npm install
-npm run dev   # start dev server (defaults to http://localhost:5173)
+npm run dev
 ```
 
-Open the shown URL, start a **New Game** or **Sandbox** from the title screen, and your saves will be kept locally.
-
-## Build
+## Сборка
 
 ```bash
-npm run build           # outputs a single-file bundle into dist/
-npm run preview         # serve the production build locally
+npm run build     # один HTML-файл в dist/
+npm run preview   # локальный просмотр сборки
 ```
 
-Deploy by serving `dist/index.html` (and the bundled assets it inlines) from any static host.
+## Стек
 
-## Scripts
+Svelte 5 · TypeScript · Canvas 2D рейкастер · Tailwind CSS 4 · Vite · XO
 
-- `npm run dev` — Vite dev server.
-- `npm run build` — production build (single-file output).
-- `npm run preview` — preview the production build locally.
-- `npm test` — run XO lint checks.
+## Структура
 
-## Project structure
+- `src/engine/` — рейкастер, процедурные текстуры, спрайты, карты.
+- `src/theater/` — состояние игры, фазы, аудиосинтез.
+- `src/screens/` — титульный экран, игровой экран.
 
-- `src/` — Svelte components, game logic, and WebGL renderer.
-  - `game/` — simulation state, items, attributes, pathfinding, audio helpers.
-  - `screens/` — title/load/sandbox/game screens.
-  - `webgl/` — world generation parameters and renderer utilities.
-- `public/` — static assets (sprites, audio) copied as-is.
-- `old_cxx_version/` — legacy C++ implementation. See its README for CMake/Ninja build steps.
+## Парадигма кода
 
-## Development notes
-
-- Uses Svelte 5 runes and Tailwind CSS 4 (via `@tailwindcss/vite`).
-- Vite alias `@` points to `src/`.
-- Lint with `npm test` (XO). Align with the rules in `AGENTS.md`.
+Элегантность, универсальность, минимум кода — максимум функциональности. Линт: `npm test` (XO), правила в `AGENTS.md`.

@@ -4,7 +4,10 @@
 	import {stopMusic} from './theater/audio';
 
 	let screen: 'title' | 'game' | 'crashed' | 'debug-maze' | 'load-game' = $state('title');
-	let hasCompleted = $state(false);
+
+	/** Debug: set to 1+ to skip stages (0 = normal game). */
+	const DEBUG_START_STAGE = 2;
+	let completedStage = $state(DEBUG_START_STAGE);
 
 	function onNewGame() {
 		screen = 'game';
@@ -16,7 +19,7 @@
 	}
 
 	function onRestart() {
-		hasCompleted = true;
+		completedStage++;
 		screen = 'title';
 	}
 
@@ -31,13 +34,13 @@
 
 <div class="h-screen w-screen overflow-hidden bg-black">
 	{#if screen === 'title'}
-		<TitleScreen {onNewGame} {onLoadGame} {onDebugMaze} {hasCompleted} />
+		<TitleScreen {onNewGame} {onLoadGame} {onDebugMaze} {completedStage} />
 	{:else if screen === 'game'}
-		<GameScreen {onCrash} {onRestart} />
+		<GameScreen {onCrash} {onRestart} {completedStage} />
 	{:else if screen === 'debug-maze'}
-		<GameScreen {onCrash} {onRestart} debugMaze={true} />
+		<GameScreen {onCrash} {onRestart} debugMaze={true} {completedStage} />
 	{:else if screen === 'load-game'}
-		<GameScreen {onCrash} {onRestart} loadMode={true} />
+		<GameScreen {onCrash} {onRestart} loadMode={true} {completedStage} />
 	{:else if screen === 'crashed'}
 		<!-- Game "crashed" to desktop — just black screen -->
 		<div class="absolute inset-0 bg-black"></div>

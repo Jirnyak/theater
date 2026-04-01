@@ -78,6 +78,233 @@ export function createTheaterMap(): TileMap {
 	return THEATER_MAP.map(row => [...row]);
 }
 
+// ── Stage 2 helpers ─────────────────────────────────────────────
+
+/**
+ * Create a stage 2 lobby map — same as default theater
+ * but with velvet rope barrier across archway and side passages.
+ */
+export function createStage2LobbyMap(): TileMap {
+	const map = createTheaterMap();
+	// Velvet rope barrier across archway (row 8), gap at center for usher
+	for (const x of [3, 4, 5, 9, 10, 11, 12]) {
+		map[8][x] = Tile.WALL_VELVET_ROPE;
+	}
+
+	// Open side passages at rows 10-11 (left wall x=0, right wall x=14)
+	map[10][0] = Tile.FLOOR;
+	map[11][0] = Tile.FLOOR;
+	map[10][14] = Tile.FLOOR;
+	map[11][14] = Tile.FLOOR;
+	return map;
+}
+
+/** Segment of the snake path centerline. */
+export type PathSegment = {x0: number; y0: number; x1: number; y1: number};
+
+/** Mark a horizontal span of path tiles at row y, covering x0..x1 ± radius. */
+function markSpan(tiles: Set<string>, x0: number, x1: number, y: number, r: number, w: number): void {
+	const lo = Math.min(x0, x1);
+	const hi = Math.max(x0, x1);
+	for (let ix = lo; ix <= hi; ix++) {
+		for (let dx = -r; dx <= r; dx++) {
+			const px = ix + dx;
+			if (px > 0 && px < w - 1) {
+				tiles.add(`${px},${y}`);
+			}
+		}
+	}
+}
+
+/**
+ * Stage 2 snake corridor — dark room with a blood trail on the ceiling.
+ * The trail is a smooth, non-repeating meander from bottom to top.
+ * Stepping off the path = void. The path is narrow, forcing the player
+ * to follow it carefully. Bends are spaced far enough apart that
+ * diagonal shortcuts land off-trail.
+ */
+export function generateSnakeCorridor(): {
+	map: TileMap;
+	pathTiles: Set<string>;
+	pathSegments: PathSegment[];
+	start: {x: number; y: number; angle: number};
+	exitY: number;
+} {
+	const width = 31;
+	const height = 60;
+	const map: TileMap = [];
+
+	// Fill: walls on edges, floor inside
+	for (let y = 0; y < height; y++) {
+		const row: number[] = [];
+		for (let x = 0; x < width; x++) {
+			if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+				row.push(Tile.WALL_DARK);
+			} else {
+				row.push(Tile.FLOOR);
+			}
+		}
+
+		map.push(row);
+	}
+
+	const cx = Math.floor(width / 2); // 15
+	const margin = 4;
+	const minX = margin;
+	const maxX = width - margin - 1;
+
+	// Generate smooth meandering centerline using layered sine waves
+	// with random phases/frequencies — produces non-repeating organic curve.
+	const freqs = [
+		{f: 0.07 + Math.random() * 0.04, p: Math.random() * Math.PI * 2, a: 0.35},
+		{f: 0.13 + Math.random() * 0.06, p: Math.random() * Math.PI * 2, a: 0.25},
+		{f: 0.23 + Math.random() * 0.08, p: Math.random() * Math.PI * 2, a: 0.15},
+		{f: 0.41 + Math.random() * 0.1, p: Math.random() * Math.PI * 2, a: 0.08},
+	];
+
+	/** Get normalized X offset [-1..1] for a given Y. */
+	function meander(y: number): number {
+		let v = 0;
+		for (const {f, p, a} of freqs) {
+			v += Math.sin(y * f + p) * a;
+		}
+
+		// Clamp to [-1, 1]
+		return Math.max(-1, Math.min(1, v / 0.6));
+	}
+
+	// Sample centerline at each row
+	const centerXs: number[] = [];
+	for (let y = 0; y < height; y++) {
+		const t = meander(y);
+		// Map [-1..1] to [minX..maxX]
+		const xf = cx + t * (maxX - minX) / 2;
+		centerXs.push(Math.max(minX, Math.min(maxX, Math.round(xf))));
+	}
+
+	// Build segments from the centerline (connect each row to the next)
+	const pathSegments: PathSegment[] = [];
+	const pathTiles = new Set<string>();
+	const pathRadius = 1;
+
+	for (let y = 1; y < height - 2; y++) {
+		const x0 = centerXs[y];
+		const x1 = centerXs[y + 1];
+		pathSegments.push({
+			x0: x0 + 0.5, y0: y + 0.5,
+			x1: x1 + 0.5, y1: y + 1 + 0.5,
+		});
+
+		// Mark tiles for this row's center ± radius
+		for (let dx = -pathRadius; dx <= pathRadius; dx++) {
+			const px = x0 + dx;
+			if (px > 0 && px < width - 1) {
+				pathTiles.add(`${px},${y}`);
+			}
+		}
+
+		// Also mark tiles between x0 and x1 for diagonal movement
+		if (x0 !== x1) {
+			markSpan(pathTiles, x0, x1, y, pathRadius, width);
+			markSpan(pathTiles, x0, x1, y + 1, pathRadius, width);
+		}
+	}
+
+	// Mark the top and bottom few rows fully as path (start/end safe zones)
+	for (let y = height - 3; y < height - 1; y++) {
+		for (let dx = -pathRadius; dx <= pathRadius; dx++) {
+			const px = centerXs[y] + dx;
+			if (px > 0 && px < width - 1) {
+				pathTiles.add(`${px},${y}`);
+			}
+		}
+	}
+
+	const startX = centerXs[height - 2];
+
+	return {
+		map,
+		pathTiles,
+		pathSegments,
+		start: {x: startX + 0.5, y: height - 2.5, angle: -Math.PI / 2},
+		exitY: 2,
+	};
+}
+
+// ── Stage 3 corridor generator ──────────────────────────────────
+
+/**
+ * Long corridor with alcove side branches.
+ * Player must dodge into alcoves when the rushing face comes.
+ * Returns alcove Y positions for collision detection.
+ */
+export function generateStage3Corridor(): {
+	map: TileMap;
+	alcoveYs: number[];
+	start: {x: number; y: number; angle: number};
+	endY: number;
+	length: number;
+} {
+	const width = 41;
+	const length = 120;
+	const map: TileMap = [];
+	const cx = Math.floor(width / 2); // 20
+
+	// Fill: walls everywhere
+	for (let y = 0; y < length; y++) {
+		const row: number[] = [];
+		for (let x = 0; x < width; x++) {
+			row.push(Tile.WALL_DARK);
+		}
+
+		map.push(row);
+	}
+
+	// Carve narrow main corridor (1 tile wide — just the center column)
+	for (let y = 1; y < length - 1; y++) {
+		map[y][cx] = Tile.FLOOR;
+	}
+
+	// Carve side corridors at regular intervals — long passages to hide in
+	const alcoveYs: number[] = [];
+	const alcoveSpacing = 12 + Math.floor(Math.random() * 4);
+	let nextAlcove = 10 + Math.floor(Math.random() * 3);
+	let goLeft = Math.random() > 0.5;
+
+	while (nextAlcove < length - 15) {
+		alcoveYs.push(nextAlcove);
+
+		// Long side corridor: 1 tile wide, extends to map edge
+		const dir = goLeft ? -1 : 1;
+		for (let dy = -1; dy <= 1; dy++) {
+			const ay = nextAlcove + dy;
+			if (ay <= 0 || ay >= length - 1) {
+				continue;
+			}
+
+			let ax = cx + dir;
+			while (ax >= 1 && ax < width - 1) {
+				map[ay][ax] = Tile.FLOOR;
+				ax += dir;
+			}
+		}
+
+		nextAlcove += alcoveSpacing + Math.floor(Math.random() * 3);
+		goLeft = !goLeft;
+	}
+
+	// Exit door at the far end
+	map[1][cx] = Tile.WALL_DOOR;
+
+	return {
+		map,
+		alcoveYs,
+		start: {x: cx + 0.5, y: length - 2.5, angle: -Math.PI / 2},
+		endY: 3,
+		length,
+	};
+}
+
 // ── Procedural maze generator ───────────────────────────────────
 
 const LIFE_TILES = [
@@ -773,4 +1000,58 @@ export function shiftDungeon(oldMap: TileMap, dx: number, dy: number): TileMap {
 	}
 
 	return map;
+}
+
+// ── Catharsis (Stage 3 exit) ────────────────────────────────────
+
+/**
+ * Catharsis map — the theater lobby with all windows lit, door open.
+ * Beyond the door: open void (floor only, no walls) stretching north.
+ * Player walks from lobby through the open door into white nothingness.
+ */
+export function generateCatharsisMap(): {
+	map: TileMap;
+	start: {x: number; y: number; angle: number};
+	doorY: number;
+} {
+	// Void extends 30 tiles north beyond the theater
+	const voidLength = 30;
+	const mapH = voidLength + 19; // Void + theater
+	const mapW = 15;
+
+	// Build empty map (all walls)
+	const map: TileMap = [];
+	for (let y = 0; y < mapH; y++) {
+		map.push(Array.from<number>({length: mapW}).fill(Tile.WALL_DARK));
+	}
+
+	// Copy theater rows into bottom part (offset by voidLength)
+	const theater = createTheaterMap();
+	for (let y = 0; y < 19; y++) {
+		for (let x = 0; x < mapW; x++) {
+			map[y + voidLength][x] = theater[y][x];
+		}
+	}
+
+	// Open the corridor door — row 0 of theater = voidLength in our map
+	for (let x = 5; x <= 9; x++) {
+		map[voidLength][x] = Tile.FLOOR;
+	}
+
+	// Void: wide open floor beyond the door, no walls
+	for (let y = 0; y < voidLength; y++) {
+		for (let x = 0; x < mapW; x++) {
+			map[y][x] = Tile.FLOOR;
+		}
+	}
+
+	return {
+		map,
+		start: {
+			x: PLAYER_START.x,
+			y: voidLength + PLAYER_START.y,
+			angle: PLAYER_START.angle,
+		},
+		doorY: voidLength,
+	};
 }

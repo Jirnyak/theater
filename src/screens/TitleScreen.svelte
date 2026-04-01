@@ -9,10 +9,10 @@
 		onNewGame: () => void;
 		onLoadGame?: () => void;
 		onDebugMaze?: () => void;
-		hasCompleted?: boolean;
+		completedStage?: number;
 	};
 
-	const {onNewGame, onLoadGame, onDebugMaze, hasCompleted = false}: Props = $props();
+	const {onNewGame, onLoadGame, onDebugMaze, completedStage = 0}: Props = $props();
 	let titleVisible = $state(false);
 	let buttonsVisible = $state(false);
 	let theaterCanvas: HTMLCanvasElement | undefined = $state();
@@ -24,9 +24,11 @@
 
 	// Start title music
 	$effect(() => {
-		const track = hasCompleted
-			? 'assets/sound/ertaeht.mp3'
-			: 'assets/sound/theatre.mp3';
+		const track = completedStage >= 3
+			? 'assets/sound/catharsis.mp3'
+			: (completedStage > 0
+				? 'assets/sound/ertaeht.mp3'
+				: 'assets/sound/theatre.mp3');
 		playMusicLoop(track);
 	});
 
@@ -153,6 +155,15 @@
 
 	/** Check which button (0,1,2) is at the given internal coords, or -1. */
 	function getButtonAt(x: number, y: number): number {
+		// Catharsis mode: the title text itself is the only button (index 0)
+		if (completedStage >= 3) {
+			if (titleVisible && x >= 100 && x <= 220 && y >= 45 && y <= 75) {
+				return 0;
+			}
+
+			return -1;
+		}
+
 		const bx = 95;
 		const bw = 130;
 		if (x < bx || x > bx + bw) {
@@ -201,6 +212,20 @@
 		ctx.clearRect(0, 0, 320, 120);
 
 		if (!showTitle && !showButtons) {
+			return;
+		}
+
+		// Catharsis mode: just the title, clickable
+		if (completedStage >= 3) {
+			if (showTitle) {
+				const titleColor = hovered === 0 ? '#ffffff' : '#aaaaaa';
+				ctx.shadowColor = 'rgba(255,255,255,0.4)';
+				ctx.shadowBlur = hovered === 0 ? 12 : 6;
+				drawPixelText(ctx, '\u0422\u0415\u0410\u0422\u0420', 160, 50, 20, titleColor);
+				ctx.shadowBlur = 0;
+				ctx.shadowColor = 'transparent';
+			}
+
 			return;
 		}
 
@@ -323,13 +348,32 @@
 
 		// Windows — placed between columns
 		const windowXs = [bx + 27, bx + 67, bx + 109];
-		for (let row = 0; row < 2; row++) {
-			for (const wx of windowXs) {
+		for (const [col, wx] of windowXs.entries()) {
+			// Light up windows by column (left to right):
+			// completedStage >= 1 → left column glows
+			// completedStage >= 2 → left + center columns glow
+			const isLit = completedStage >= col + 1;
+			for (let row = 0; row < 2; row++) {
 				const wy = by + 38 + row * 32;
 				ctx.fillStyle = '#1a1518';
 				ctx.fillRect(wx, wy, 14, 22);
-				ctx.fillStyle = '#2a2025';
-				ctx.fillRect(wx + 1, wy + 1, 12, 20);
+				if (isLit) {
+					// Warm amber glow
+					ctx.fillStyle = '#8a6520';
+					ctx.fillRect(wx + 1, wy + 1, 12, 20);
+					// Brighter center
+					ctx.fillStyle = '#b8882a';
+					ctx.fillRect(wx + 3, wy + 3, 8, 16);
+					// Light spill glow
+					const wGrad = ctx.createRadialGradient(wx + 7, wy + 11, 2, wx + 7, wy + 11, 20);
+					wGrad.addColorStop(0, 'rgba(140, 100, 30, 0.25)');
+					wGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+					ctx.fillStyle = wGrad;
+					ctx.fillRect(wx - 10, wy - 10, 34, 42);
+				} else {
+					ctx.fillStyle = '#2a2025';
+					ctx.fillRect(wx + 1, wy + 1, 12, 20);
+				}
 			}
 		}
 

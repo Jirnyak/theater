@@ -8,6 +8,9 @@
 		generateVortexMan,
 		generateVortexFrames,
 		generateVortexManFlash,
+		generateNormalPerson,
+		generateScaryFace,
+		generateScaryFaceFrames,
 	} from '../engine/sprites';
 	import {
 		type TheaterState,
@@ -17,10 +20,13 @@
 		tickTheater,
 		enterMaze,
 		enterRooms,
+		enterCatharsis,
 		MAZE_POSTER_COUNT,
+		PEOPLE_COUNT,
 	} from '../theater/state';
 	import {
 		playAudioTrigger, resumeAudio, playMusicLoop, stopMusic,
+		startDrone, stopDrone, updateDroneDoppler,
 	} from '../theater/audio';
 
 	type Props = {
@@ -28,15 +34,16 @@
 		onRestart: () => void;
 		debugMaze?: boolean;
 		loadMode?: boolean;
+		completedStage?: number;
 	};
 
-	const {onCrash, onRestart, debugMaze = false, loadMode = false}: Props = $props();
+	const {onCrash, onRestart, debugMaze = false, loadMode = false, completedStage = 0}: Props = $props();
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let flashCanvas: HTMLCanvasElement | undefined = $state();
 	let debugCanvas: HTMLCanvasElement | undefined = $state();
 	let msgCanvas: HTMLCanvasElement | undefined = $state();
-	const state: TheaterState = $state(createTheaterState());
+	const state: TheaterState = $state(createTheaterState(completedStage + 1));
 	let raycaster: Raycaster | undefined = $state();
 	let animFrame = 0;
 	let lastTime = 0;
@@ -44,6 +51,9 @@
 	let vortexFlashImg: ImageData | undefined;
 	let vortexFrameIndex = 0;
 	let vortexFrameTimer = 0;
+	let faceFrames: ImageData[] = [];
+	let faceFrameIndex = 0;
+	let faceFrameTimer = 0;
 	let lastMazePosterSeeds: number[] = [];
 
 	function drawVortexFlash(fc: HTMLCanvasElement, img: ImageData): void {
@@ -93,6 +103,46 @@
 		}
 	}
 
+	/** Catharsis ending — screen goes white, then "crashes" the browser tab. */
+	function performCatharsisCrash(): void {
+		stopMusic();
+		stopDrone();
+
+		// Phase 1: Fill entire page with white
+		document.body.style.background = '#fff';
+		document.body.innerHTML = '';
+
+		const overlay = document.createElement('div');
+		overlay.style.cssText
+			= 'position:fixed;inset:0;background:#fff;z-index:999999;';
+		document.body.append(overlay);
+
+		// Phase 2: After a brief white moment, try to close the tab
+		setTimeout(() => {
+			// Try globalThis.close() — works if opened via script or link
+			try {
+				globalThis.close();
+			} catch {}
+
+			// If close didn't work (most browsers block it),
+			// replace the page content with a blank white page,
+			// then navigate away after a beat
+			setTimeout(() => {
+				// Replace entire document — point of no return
+				document.open();
+				document.write('<!DOCTYPE html><html><head><title></title></head><body style="background:#fff"></body></html>');
+				document.close();
+
+				// Final attempt: navigate to about:blank
+				setTimeout(() => {
+					try {
+						globalThis.location.replace('about:blank');
+					} catch {}
+				}, 500);
+			}, 800);
+		}, 1500);
+	}
+
 	// Input state
 	const keys = new Set<string>();
 
@@ -121,20 +171,58 @@
 	// ── Phase-based background music ──────────────────────────────
 	$effect(() => {
 		const p = state.phase;
-		if (p === Phase.USHER_SCARED || p === Phase.USHER_WARNING) {
-			stopMusic();
-		} else if (p === Phase.NORMAL || (p >= Phase.POST_ENCOUNTER && p <= Phase.FINAL_WALL) || p === Phase.ROOMS) {
-			playMusicLoop('assets/sound/theatre.mp3');
-		} else if (p >= Phase.USHER_GONE && p <= Phase.GLITCH_SCREAM) {
-			playMusicLoop('assets/sound/ertaeht.mp3');
-		} else if (p === Phase.MAZE) {
-			playMusicLoop('assets/sound/devil.mp3');
-		} else {
-			stopMusic();
+		switch (true) {
+			case p === Phase.USHER_SCARED || p === Phase.USHER_WARNING: {
+				stopMusic();
+				stopDrone();
+				break;
+			}
+
+			case p === Phase.NORMAL || (p >= Phase.POST_ENCOUNTER && p <= Phase.FINAL_WALL) || p === Phase.ROOMS || p === Phase.STAGE3_ATRIUM: {
+				playMusicLoop('assets/sound/theatre.mp3');
+				stopDrone();
+				break;
+			}
+
+			case p === Phase.STAGE2_LOBBY: {
+				playMusicLoop('assets/sound/talking.mp3');
+				stopDrone();
+				break;
+			}
+
+			case p >= Phase.USHER_GONE && p <= Phase.GLITCH_SCREAM: {
+				playMusicLoop('assets/sound/ertaeht.mp3');
+				stopDrone();
+				break;
+			}
+
+			case p === Phase.MAZE: {
+				playMusicLoop('assets/sound/devil.mp3');
+				stopDrone();
+				break;
+			}
+
+			case p === Phase.STAGE3_CORRIDOR: {
+				stopMusic();
+				startDrone();
+				break;
+			}
+
+			case p === Phase.CATHARSIS: {
+				stopMusic();
+				stopDrone();
+				break;
+			}
+
+			default: {
+				stopMusic();
+				stopDrone();
+			}
 		}
 
 		return () => {
 			stopMusic();
+			stopDrone();
 		};
 	});
 
@@ -161,6 +249,15 @@
 		rc.registerSprite('vortex', generateVortexMan());
 		rc.registerSprite('empty_easel', generateEmptyEasel());
 
+		// Register people sprites for stage 2
+		for (let i = 0; i < PEOPLE_COUNT; i++) {
+			rc.registerSprite(`person_${i}`, generateNormalPerson(i));
+		}
+
+		// Stage 3 scary face
+		rc.registerSprite('scary_face', generateScaryFace());
+		faceFrames = generateScaryFaceFrames(12);
+
 		// Pre-generate vortex animation frames
 		vortexFrames = generateVortexFrames(12);
 		vortexFlashImg = generateVortexManFlash();
@@ -172,6 +269,8 @@
 			untrack(() => enterMaze(state));
 		} else if (loadMode) {
 			untrack(() => enterRooms(state));
+		} else if (state.stage >= 4) {
+			untrack(() => enterCatharsis(state));
 		}
 
 		// Start game loop
@@ -312,12 +411,31 @@
 
 		// Handle audio triggers
 		if (state.triggerAudio) {
-			playAudioTrigger(state.triggerAudio);
+			if (state.triggerAudio === 'applause') {
+				playMusicLoop('assets/sound/applause_clap.mp3');
+			} else {
+				playAudioTrigger(state.triggerAudio);
+			}
+		}
+
+		// Drone Doppler for Stage 3 corridor — face patrols continuously
+		if (state.phase === Phase.STAGE3_CORRIDOR) {
+			const dist = Math.abs(state.stage3FaceY - state.camera.y);
+			const approaching = state.stage3FaceSpeed > 0
+				? state.stage3FaceY < state.camera.y
+				: state.stage3FaceY > state.camera.y;
+			updateDroneDoppler(dist, approaching, true);
 		}
 
 		// Handle game over
 		if (state.gameOver) {
-			if (state.phase === Phase.MAZE_EXIT) {
+			if (state.phase === Phase.CATHARSIS) {
+				// Catharsis ending — dramatic browser "crash"
+				performCatharsisCrash();
+				return;
+			}
+
+			if (state.phase === Phase.MAZE_EXIT || state.phase === Phase.STAGE2_EXIT || state.phase === Phase.STAGE3_EXIT) {
 				onRestart();
 			} else {
 				onCrash();
@@ -328,9 +446,12 @@
 
 		// Render
 		if (canvas && raycaster) {
-			// Animate vortex sprite during encounter & glitch phases
+			// Animate vortex sprite in all phases where vortex figures are visible
 			const vortexActive = state.phase === Phase.VORTEX_ENCOUNTER
-				|| state.phase === Phase.GLITCH_SCREAM;
+				|| state.phase === Phase.GLITCH_SCREAM
+				|| state.phase === Phase.STAGE2_DARK
+				|| state.phase === Phase.MAZE
+				|| state.phase === Phase.STAGE3_ATRIUM;
 			if (vortexActive && vortexFrames.length > 0) {
 				vortexFrameTimer += dt;
 				if (vortexFrameTimer > 0.08) {
@@ -340,23 +461,50 @@
 				}
 			}
 
+			// Animate scary face eye spirals during corridor phase
+			if (state.phase === Phase.STAGE3_CORRIDOR && faceFrames.length > 0) {
+				faceFrameTimer += dt;
+				if (faceFrameTimer > 0.08) {
+					faceFrameTimer = 0;
+					faceFrameIndex = (faceFrameIndex + 1) % faceFrames.length;
+					raycaster.updateSprite('scary_face', faceFrames[faceFrameIndex]);
+				}
+			}
+
 			// Glitch intensity from state
 			raycaster.glitchIntensity
 				= state.phase === Phase.GLITCH_SCREAM
 					? 0.8
 					: (state.vortexFlashActive ? 0.3 : 0);
 
-			// Darker fog in maze
+			// Darker fog in maze and stage 2
 			raycaster.fogDensity = state.mazeFogDensity > 0
 				? state.mazeFogDensity
 				: 0.08;
 
-			// Rug only visible on theater map
-			raycaster.rugZone = state.phase <= Phase.FINAL_WALL
-				? {
+			// Rug zone — theater map and stage 2 lobby (same map)
+			if (state.phase <= Phase.FINAL_WALL || state.phase === Phase.STAGE2_LOBBY || state.phase === Phase.STAGE2_DARK || state.phase === Phase.STAGE3_ATRIUM) {
+				raycaster.rugZone = {
 					x0: 6, y0: 8, x1: 9, y1: 18,
-				}
-				: undefined;
+				};
+				raycaster.pathTiles = undefined;
+			} else if (state.phase === Phase.STAGE2_CORRIDOR) {
+				raycaster.rugZone = undefined;
+				raycaster.pathTiles = state.snakePathTiles;
+				raycaster.pathSegments = state.snakePathSegments;
+			} else {
+				raycaster.rugZone = undefined;
+				raycaster.pathTiles = undefined;
+				raycaster.pathSegments = undefined;
+			}
+
+			// Catharsis: white fog + bright environment
+			if (state.phase === Phase.CATHARSIS) {
+				raycaster.fogColor = [255, 255, 255];
+				raycaster.fogDensity = 0.03;
+			} else {
+				raycaster.fogColor = [0, 0, 0];
+			}
 
 			raycaster.render(
 				canvas,
@@ -364,6 +512,7 @@
 				state.map,
 				state.sprites,
 				state.darkness,
+				state.whiteness,
 			);
 
 			// Fullscreen vortex face flash overlay

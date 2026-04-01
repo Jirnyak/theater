@@ -8,6 +8,7 @@ import {
 import {
 	type TextureAtlas, generateFloor, generateCeiling, generateRug,
 } from './textures';
+import {type PathSegment} from './maps';
 
 // ── Internal resolution (retro look) ───────────────────────────
 const INTERNAL_W = 320;
@@ -30,6 +31,20 @@ export class Raycaster {
 	// Rug zone (world-space rectangle where rug replaces floor)
 	rugZone: {x0: number; y0: number; x1: number; y1: number} | undefined;
 
+	// Path tiles — set of "x,y" keys for snake corridor collision
+	pathTiles: Set<string> | undefined;
+
+	// Path segments — line segments for blood trail on ceiling
+	pathSegments: PathSegment[] | undefined;
+
+	// Precomputed blood grid (lazy, built on first render after pathSegments change)
+	private _bloodGrid: Float32Array | undefined;
+	private _bloodGridW = 0;
+	private _bloodGridH = 0;
+	private _bloodGridX0 = 0;
+	private _bloodGridY0 = 0;
+	private _bloodGridSource: PathSegment[] | undefined;
+
 	// Fog / darkness
 	fogColor: [number, number, number] = [0, 0, 0];
 	fogDensity = 0.08;
@@ -46,6 +61,68 @@ export class Raycaster {
 
 		this.ctx = c;
 		this.ctx.imageSmoothingEnabled = false;
+	}
+
+	/** Precompute blood intensity grid from path segments (called once per segment set). */
+	private precomputeBloodGrid(segs: PathSegment[]): void {
+		const scale = 4; // 4 grid cells per world tile
+		const trailWidth = 0.6;
+
+		// Bounding box of all segments + margin
+		let minX = Infinity;
+		let minY = Infinity;
+		let maxX = -Infinity;
+		let maxY = -Infinity;
+		for (const s of segs) {
+			minX = Math.min(minX, s.x0, s.x1);
+			minY = Math.min(minY, s.y0, s.y1);
+			maxX = Math.max(maxX, s.x0, s.x1);
+			maxY = Math.max(maxY, s.y0, s.y1);
+		}
+
+		minX -= trailWidth + 1;
+		minY -= trailWidth + 1;
+		maxX += trailWidth + 1;
+		maxY += trailWidth + 1;
+
+		const gw = Math.ceil((maxX - minX) * scale);
+		const gh = Math.ceil((maxY - minY) * scale);
+		const grid = new Float32Array(gw * gh);
+
+		for (let gy = 0; gy < gh; gy++) {
+			const worldY = minY + (gy + 0.5) / scale;
+			for (let gx = 0; gx < gw; gx++) {
+				const worldX = minX + (gx + 0.5) / scale;
+				let minDist = Infinity;
+				for (const seg of segs) {
+					const ex = seg.x1 - seg.x0;
+					const ey = seg.y1 - seg.y0;
+					const segLength2 = ex * ex + ey * ey;
+					let t = segLength2 > 0
+						? ((worldX - seg.x0) * ex + (worldY - seg.y0) * ey) / segLength2
+						: 0;
+					t = Math.max(0, Math.min(1, t));
+					const dx = worldX - (seg.x0 + t * ex);
+					const dy = worldY - (seg.y0 + t * ey);
+					const d = Math.sqrt(dx * dx + dy * dy);
+					if (d < minDist) {
+						minDist = d;
+					}
+				}
+
+				if (minDist < trailWidth) {
+					const edge = minDist / trailWidth;
+					grid[gy * gw + gx] = 1 - edge * edge;
+				}
+			}
+		}
+
+		this._bloodGrid = grid;
+		this._bloodGridW = gw;
+		this._bloodGridH = gh;
+		this._bloodGridX0 = minX;
+		this._bloodGridY0 = minY;
+		this._bloodGridSource = segs;
 	}
 
 	/** Load texture atlas + floor/ceiling. Call once at init. */
@@ -73,6 +150,7 @@ export class Raycaster {
 		map: TileMap,
 		sprites: Sprite[],
 		darkness = 0,
+		whiteness = 0,
 	): void {
 		const fov = Math.PI / 3; // 60 degree FOV
 		const halfFov = fov / 2;
@@ -157,6 +235,16 @@ export class Raycaster {
 				data[i] = Math.floor(data[i] * (1 - alpha));
 				data[i + 1] = Math.floor(data[i + 1] * (1 - alpha));
 				data[i + 2] = Math.floor(data[i + 2] * (1 - alpha));
+			}
+		}
+
+		// ── Whiteness overlay (fade to pure white) ──────────────
+		if (whiteness > 0) {
+			const w = Math.min(1, whiteness);
+			for (let i = 0; i < data.length; i += 4) {
+				data[i] = Math.floor(data[i] + (255 - data[i]) * w);
+				data[i + 1] = Math.floor(data[i + 1] + (255 - data[i + 1]) * w);
+				data[i + 2] = Math.floor(data[i + 2] + (255 - data[i + 2]) * w);
 			}
 		}
 
@@ -270,6 +358,7 @@ export class Raycaster {
 
 		// Floor (below wall)
 		const rz = this.rugZone;
+		const pt = this.pathTiles;
 		for (let y = wallBottom; y < h; y++) {
 			const rowDist = (h / 2) / (y - h / 2 - camera.pitch);
 			const corrected = rowDist / cosAngle;
@@ -281,7 +370,9 @@ export class Raycaster {
 			const ty = Math.floor(floorY * TEX_SIZE) & (TEX_SIZE - 1);
 
 			// Choose floor or rug texture based on world position
-			const useRug = rz
+			// pathTiles mode: floor always uniform (no rug), path only on ceiling
+			const useRug = !pt
+				&& rz
 				&& floorX >= rz.x0 && floorX < rz.x1
 				&& floorY >= rz.y0 && floorY < rz.y1;
 			const tex = useRug ? this.rugTex : this.floorTex;
@@ -311,9 +402,45 @@ export class Raycaster {
 			const fogFactor = Math.min(1, corrected * this.fogDensity);
 			const pi = (y * w + col) * 4;
 
-			data[pi] = Math.floor(this.ceilTex.data[ti] * (1 - fogFactor));
-			data[pi + 1] = Math.floor(this.ceilTex.data[ti + 1] * (1 - fogFactor));
-			data[pi + 2] = Math.floor(this.ceilTex.data[ti + 2] * (1 - fogFactor));
+			const vis = 1 - fogFactor;
+
+			// Smooth blood trail on ceiling — lookup precomputed grid
+			const segs = this.pathSegments;
+			let bloodAlpha = 0;
+			if (segs && segs.length > 0) {
+				if (segs !== this._bloodGridSource) {
+					this.precomputeBloodGrid(segs);
+				}
+
+				const grid = this._bloodGrid!;
+				const gx = Math.floor((ceilX - this._bloodGridX0) * 4);
+				const gy = Math.floor((ceilY - this._bloodGridY0) * 4);
+				if (gx >= 0 && gx < this._bloodGridW && gy >= 0 && gy < this._bloodGridH) {
+					bloodAlpha = grid[gy * this._bloodGridW + gx];
+					if (bloodAlpha > 0) {
+						// Procedural variation
+						const bh = ((tx * 7 + ty * 13) & 0xFF) / 255;
+						bloodAlpha *= 0.6 + bh * 0.4;
+					}
+				}
+			}
+
+			if (bloodAlpha > 0.01) {
+				const br = 100 + Math.floor(60 * bloodAlpha);
+				const bg = 5;
+				const bb = 5;
+				const cr = this.ceilTex.data[ti];
+				const cg = this.ceilTex.data[ti + 1];
+				const cb = this.ceilTex.data[ti + 2];
+				data[pi] = Math.floor((cr + (br - cr) * bloodAlpha) * vis);
+				data[pi + 1] = Math.floor((cg + (bg - cg) * bloodAlpha) * vis);
+				data[pi + 2] = Math.floor((cb + (bb - cb) * bloodAlpha) * vis);
+			} else {
+				data[pi] = Math.floor(this.ceilTex.data[ti] * vis);
+				data[pi + 1] = Math.floor(this.ceilTex.data[ti + 1] * vis);
+				data[pi + 2] = Math.floor(this.ceilTex.data[ti + 2] * vis);
+			}
+
 			data[pi + 3] = 255;
 		}
 	}

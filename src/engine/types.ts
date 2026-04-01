@@ -27,6 +27,7 @@ export const enum Tile {
 	WALL_PANEL = 15,
 	WALL_DOOR = 16,
 	WALL_REAR_DOOR = 17,
+	WALL_VELVET_ROPE = 18,
 }
 
 /** Player / camera state in world space. */
