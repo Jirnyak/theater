@@ -9,10 +9,11 @@
 		onNewGame: () => void;
 		onLoadGame?: () => void;
 		onDebugMaze?: () => void;
+		onDebugStage?: (stage: number) => void;
 		completedStage?: number;
 	};
 
-	const {onNewGame, onLoadGame, onDebugMaze, completedStage = 0}: Props = $props();
+	const {onNewGame, onLoadGame, onDebugMaze, onDebugStage, completedStage = 0}: Props = $props();
 	let titleVisible = $state(false);
 	let buttonsVisible = $state(false);
 	let theaterCanvas: HTMLCanvasElement | undefined = $state();
@@ -21,6 +22,7 @@
 	let bileterVisible = $state(false);
 	let bileterSprite: ImageData | undefined = $state();
 	let bileterCanvas: HTMLCanvasElement | undefined = $state();
+	let easterEggActive = $state(false);
 
 	// Start title music
 	$effect(() => {
@@ -76,6 +78,26 @@
 		}
 	});
 
+	// Easter egg: keyboard listener for stage jump
+	$effect(() => {
+		if (!easterEggActive || !onDebugStage) {
+			return;
+		}
+
+		function onKey(e: KeyboardEvent) {
+			const n = Number(e.key);
+			if (n >= 1 && n <= 3) {
+				resumeAudio();
+				onDebugStage(n);
+			}
+		}
+
+		globalThis.addEventListener('keydown', onKey);
+		return () => {
+			globalThis.removeEventListener('keydown', onKey);
+		};
+	});
+
 	function handleNewGame() {
 		resumeAudio();
 		onNewGame();
@@ -100,6 +122,31 @@
 			: generateUsher();
 
 		bileterVisible = !bileterVisible;
+	}
+
+	// ── Theater building click (easter egg: click window while bileter visible) ──
+	function onTheaterClick(event: MouseEvent) {
+		if (!bileterVisible || !theaterCanvas) {
+			return;
+		}
+
+		const rect = theaterCanvas.getBoundingClientRect();
+		const sx = (event.clientX - rect.left) / rect.width * 320;
+		const sy = (event.clientY - rect.top) / rect.height * 240;
+
+		// Window hit-test (same coords as drawTheaterBuilding)
+		const bx = 80;
+		const by = 40;
+		const windowXs = [bx + 27, bx + 67, bx + 109];
+		for (const wx of windowXs) {
+			for (let row = 0; row < 2; row++) {
+				const wy = by + 38 + row * 32;
+				if (sx >= wx && sx <= wx + 14 && sy >= wy && sy <= wy + 22) {
+					easterEggActive = true;
+					return;
+				}
+			}
+		}
 	}
 
 	// ── Menu canvas click detection ─────────────────────────────
@@ -395,12 +442,14 @@
 
 <div class="absolute inset-0 flex flex-col items-center justify-center bg-black" onclick={resumeAudio}>
 	<!-- Theater building sprite (procedural) -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<canvas
 		bind:this={theaterCanvas}
 		class="block"
 		width="320"
 		height="240"
 		style="image-rendering: pixelated; width: 640px; height: 480px;"
+		onclick={onTheaterClick}
 	></canvas>
 
 	<!-- Menu (rendered on low-res canvas → scaled up for pixel look) -->

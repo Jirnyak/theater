@@ -30,11 +30,16 @@
 	function onLoadGame() {
 		screen = 'load-game';
 	}
+
+	function onDebugStage(stage: number) {
+		completedStage = stage;
+		screen = 'game';
+	}
 </script>
 
 <div class="h-screen w-screen overflow-hidden bg-black">
 	{#if screen === 'title'}
-		<TitleScreen {onNewGame} {onLoadGame} {onDebugMaze} {completedStage} />
+		<TitleScreen {onNewGame} {onLoadGame} {onDebugMaze} {onDebugStage} {completedStage} />
 	{:else if screen === 'game'}
 		<GameScreen {onCrash} {onRestart} {completedStage} />
 	{:else if screen === 'debug-maze'}
