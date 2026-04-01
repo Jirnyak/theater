@@ -6,7 +6,7 @@
 	let screen: 'title' | 'game' | 'crashed' | 'debug-maze' | 'load-game' = $state('title');
 
 	/** Debug: set to 1+ to skip stages (0 = normal game). */
-	const DEBUG_START_STAGE = 2;
+	const DEBUG_START_STAGE = 0;
 	let completedStage = $state(DEBUG_START_STAGE);
 
 	function onNewGame() {
