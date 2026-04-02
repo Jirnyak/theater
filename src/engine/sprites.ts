@@ -346,12 +346,7 @@ export function generateNormalPerson(variant: number): ImageData {
 		fillEllipse(s, 32, 13, 8, 5, hairColor[0], hairColor[1], hairColor[2]);
 	}
 
-	// Eyes
-	fillRect(s, 28, 17, 2, 2, 30, 25, 20);
-	fillRect(s, 34, 17, 2, 2, 30, 25, 20);
-
-	// Mouth (small, neutral)
-	fillRect(s, 30, 22, 4, 1, skin[0] - 40, skin[1] - 40, skin[2] - 30);
+	// Faceless — no eyes, no mouth. Just smooth skin for uncanny alienation.
 
 	return s;
 }
@@ -537,6 +532,20 @@ export function generateScaryFace(phase = 0): ImageData {
 export function generateScaryFaceFrames(count = 12): ImageData[] {
 	return Array.from({length: count}, (_, i) =>
 		generateScaryFace(i * ((Math.PI * 2) / count)));
+}
+
+/** High-contrast scary face for fullscreen flash screamers. */
+export function generateScaryFaceFlash(): ImageData {
+	const base = generateScaryFace(Math.random() * Math.PI * 2);
+	for (let i = 0; i < base.data.length; i += 4) {
+		if (base.data[i + 3] > 0) {
+			base.data[i] = Math.min(255, Math.floor(base.data[i] * 1.5));
+			base.data[i + 1] = Math.floor(base.data[i + 1] * 0.3);
+			base.data[i + 2] = Math.floor(base.data[i + 2] * 0.2);
+		}
+	}
+
+	return base;
 }
 
 /** Velvet rope barrier sprite — brass post with red rope. */

@@ -43,6 +43,7 @@ export class Raycaster {
 	private _bloodGridH = 0;
 	private _bloodGridX0 = 0;
 	private _bloodGridY0 = 0;
+	private _bloodGridScale = 0;
 	private _bloodGridSource: PathSegment[] | undefined;
 
 	// Fog / darkness
@@ -51,6 +52,9 @@ export class Raycaster {
 
 	// Visual glitch state
 	glitchIntensity = 0;
+
+	// Toroidal X wrapping (0 = off, >0 = map width to wrap at)
+	toroidalX = 0;
 
 	constructor() {
 		this.offscreen = new OffscreenCanvas(INTERNAL_W, INTERNAL_H);
@@ -65,8 +69,8 @@ export class Raycaster {
 
 	/** Precompute blood intensity grid from path segments (called once per segment set). */
 	private precomputeBloodGrid(segs: PathSegment[]): void {
-		const scale = 4; // 4 grid cells per world tile
-		const trailWidth = 0.6;
+		const scale = 8; // 8 grid cells per world tile
+		const trailWidth = 0.9;
 
 		// Bounding box of all segments + margin
 		let minX = Infinity;
@@ -112,7 +116,15 @@ export class Raycaster {
 
 				if (minDist < trailWidth) {
 					const edge = minDist / trailWidth;
-					grid[gy * gw + gx] = 1 - edge * edge;
+					// Smooth cubic falloff with organic noise
+					const base = 1 - edge * edge * edge;
+					// Hash-based noise to break up edges
+					const nx = Math.sin(worldX * 17.3 + worldY * 31.7) * 0.5 + 0.5;
+					const ny = Math.cos(worldX * 23.1 - worldY * 13.9) * 0.5 + 0.5;
+					const noise = (nx * ny) * 0.5 + 0.5;
+					// Wider solid center, noisy edges
+					const noiseInfluence = edge * edge;
+					grid[gy * gw + gx] = base * (1 - noiseInfluence + noiseInfluence * noise);
 				}
 			}
 		}
@@ -122,6 +134,7 @@ export class Raycaster {
 		this._bloodGridH = gh;
 		this._bloodGridX0 = minX;
 		this._bloodGridY0 = minY;
+		this._bloodGridScale = scale;
 		this._bloodGridSource = segs;
 	}
 
@@ -268,6 +281,9 @@ export class Raycaster {
 	private castRay(ox: number, oy: number, angle: number, map: TileMap): RayHit {
 		const dirX = Math.cos(angle);
 		const dirY = Math.sin(angle);
+		const mapW = map[0]?.length ?? 0;
+		const mapH = map.length;
+		const wrap = this.toroidalX > 0;
 
 		let mapX = Math.floor(ox);
 		let mapY = Math.floor(oy);
@@ -309,8 +325,13 @@ export class Raycaster {
 				side = 1;
 			}
 
+			// Toroidal X wrap
+			if (wrap) {
+				mapX = ((mapX % mapW) + mapW) % mapW;
+			}
+
 			// Bounds check
-			if (mapY < 0 || mapY >= map.length || mapX < 0 || mapX >= (map[0]?.length ?? 0)) {
+			if (mapY < 0 || mapY >= mapH || (!wrap && (mapX < 0 || mapX >= mapW))) {
 				return {
 					distance: 64, tileValue: 1, side, wallX: 0, mapX, mapY,
 				};
@@ -413,22 +434,27 @@ export class Raycaster {
 				}
 
 				const grid = this._bloodGrid!;
-				const gx = Math.floor((ceilX - this._bloodGridX0) * 4);
-				const gy = Math.floor((ceilY - this._bloodGridY0) * 4);
+				const sc = this._bloodGridScale;
+				const gx = Math.floor((ceilX - this._bloodGridX0) * sc);
+				const gy = Math.floor((ceilY - this._bloodGridY0) * sc);
 				if (gx >= 0 && gx < this._bloodGridW && gy >= 0 && gy < this._bloodGridH) {
 					bloodAlpha = grid[gy * this._bloodGridW + gx];
 					if (bloodAlpha > 0) {
-						// Procedural variation
-						const bh = ((tx * 7 + ty * 13) & 0xFF) / 255;
-						bloodAlpha *= 0.6 + bh * 0.4;
+						// Procedural variation using world coords for seamless noise
+						const bh = Math.sin(ceilX * 11.3 + ceilY * 7.7)
+							* Math.cos(ceilX * 5.1 - ceilY * 13.3);
+						bloodAlpha *= 0.7 + bh * 0.3;
+						bloodAlpha = Math.max(0, bloodAlpha);
 					}
 				}
 			}
 
 			if (bloodAlpha > 0.01) {
-				const br = 100 + Math.floor(60 * bloodAlpha);
-				const bg = 5;
-				const bb = 5;
+				// Darker center, brighter edges for depth
+				const bIntensity = 0.4 + bloodAlpha * 0.6;
+				const br = Math.floor(70 + 90 * bIntensity);
+				const bg = Math.floor(2 + 8 * (1 - bloodAlpha));
+				const bb = Math.floor(2 + 5 * (1 - bloodAlpha));
 				const cr = this.ceilTex.data[ti];
 				const cg = this.ceilTex.data[ti + 1];
 				const cb = this.ceilTex.data[ti + 2];

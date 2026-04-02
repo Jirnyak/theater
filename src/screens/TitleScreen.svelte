@@ -22,7 +22,7 @@
 	let bileterVisible = $state(false);
 	let bileterSprite: ImageData | undefined = $state();
 	let bileterCanvas: HTMLCanvasElement | undefined = $state();
-	let easterEggActive = $state(false);
+	let easterEggCol = $state(-1);
 
 	// Start title music
 	$effect(() => {
@@ -48,13 +48,13 @@
 		};
 	});
 
-	// Draw theater building once canvas is bound
+	// Draw theater building — re-render when easter egg state changes
 	$effect(() => {
 		if (!theaterCanvas) {
 			return;
 		}
 
-		drawTheaterBuilding(theaterCanvas);
+		drawTheaterBuilding(theaterCanvas, easterEggCol);
 	});
 
 	// Draw menu on canvas — re-render when hover or visibility changes
@@ -76,26 +76,6 @@
 		if (ctx) {
 			ctx.putImageData(bileterSprite, 0, 0);
 		}
-	});
-
-	// Easter egg: keyboard listener for stage jump
-	$effect(() => {
-		if (!easterEggActive || !onDebugStage) {
-			return;
-		}
-
-		function onKey(e: KeyboardEvent) {
-			const n = Number(e.key);
-			if (n >= 1 && n <= 3) {
-				resumeAudio();
-				onDebugStage(n);
-			}
-		}
-
-		globalThis.addEventListener('keydown', onKey);
-		return () => {
-			globalThis.removeEventListener('keydown', onKey);
-		};
 	});
 
 	function handleNewGame() {
@@ -126,7 +106,7 @@
 
 	// ── Theater building click (easter egg: click window while bileter visible) ──
 	function onTheaterClick(event: MouseEvent) {
-		if (!bileterVisible || !theaterCanvas) {
+		if (!bileterVisible || !theaterCanvas || !onDebugStage) {
 			return;
 		}
 
@@ -138,11 +118,15 @@
 		const bx = 80;
 		const by = 40;
 		const windowXs = [bx + 27, bx + 67, bx + 109];
-		for (const wx of windowXs) {
+		for (const [col, wx] of windowXs.entries()) {
 			for (let row = 0; row < 2; row++) {
 				const wy = by + 38 + row * 32;
 				if (sx >= wx && sx <= wx + 14 && sy >= wy && sy <= wy + 22) {
-					easterEggActive = true;
+					easterEggCol = col;
+					resumeAudio();
+					setTimeout(() => {
+						onDebugStage(col + 1);
+					}, 400);
 					return;
 				}
 			}
@@ -315,7 +299,7 @@
 		}
 	}
 
-	function drawTheaterBuilding(canvas: HTMLCanvasElement): void {
+	function drawTheaterBuilding(canvas: HTMLCanvasElement, litCol = -1): void {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
 			return;
@@ -396,10 +380,7 @@
 		// Windows — placed between columns
 		const windowXs = [bx + 27, bx + 67, bx + 109];
 		for (const [col, wx] of windowXs.entries()) {
-			// Light up windows by column (left to right):
-			// completedStage >= 1 → left column glows
-			// completedStage >= 2 → left + center columns glow
-			const isLit = completedStage >= col + 1;
+			const isLit = col === litCol || completedStage >= col + 1;
 			for (let row = 0; row < 2; row++) {
 				const wy = by + 38 + row * 32;
 				ctx.fillStyle = '#1a1518';

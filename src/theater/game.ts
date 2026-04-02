@@ -290,6 +290,12 @@ export type TheaterState = {
 	whiteness: number;
 	// Catharsis stage Y coordinate (where stage area is)
 	catharsisStageY: number;
+	// Toroidal X wrapping width (0 = off)
+	toroidalWidth: number;
+	// Snake corridor screamer state
+	snakeScareTimer: number;
+	snakeSpinTimer: number;
+	snakeSpinDir: number;
 };
 
 // ── State creation ──────────────────────────────────────────────
@@ -415,6 +421,10 @@ export function createTheaterState(stage = 1): TheaterState {
 		blockers: undefined,
 		whiteness: 0,
 		catharsisStageY: 0,
+		toroidalWidth: 0,
+		snakeScareTimer: 5 + Math.random() * 8,
+		snakeSpinTimer: 0,
+		snakeSpinDir: 0,
 	};
 }
 
@@ -445,16 +455,22 @@ export function movePlayer(
 	const newY = state.camera.y + dy;
 
 	// Collision detection
-	if (!isWall(state.map, newX, state.camera.y, COLLISION_MARGIN, state.blockers)) {
+	if (!isWall(state.map, newX, state.camera.y, COLLISION_MARGIN, state.blockers, state.toroidalWidth)) {
 		state.camera.x = newX;
 	}
 
-	if (!isWall(state.map, state.camera.x, newY, COLLISION_MARGIN, state.blockers)) {
+	if (!isWall(state.map, state.camera.x, newY, COLLISION_MARGIN, state.blockers, state.toroidalWidth)) {
 		state.camera.y = newY;
+	}
+
+	// Toroidal X wrap
+	if (state.toroidalWidth > 0) {
+		const w = state.toroidalWidth;
+		state.camera.x = ((state.camera.x % w) + w) % w;
 	}
 }
 
-export function isWall(map: TileMap, x: number, y: number, margin: number, blockers?: Set<string>): boolean {
+export function isWall(map: TileMap, x: number, y: number, margin: number, blockers?: Set<string>, toroidalW = 0): boolean {
 	const checks = [
 		[x - margin, y - margin],
 		[x + margin, y - margin],
@@ -462,9 +478,17 @@ export function isWall(map: TileMap, x: number, y: number, margin: number, block
 		[x + margin, y + margin],
 	];
 	for (const [cx, cy] of checks) {
-		const mx = Math.floor(cx);
+		let mx = Math.floor(cx);
 		const my = Math.floor(cy);
-		if (my < 0 || my >= map.length || mx < 0 || mx >= map[0].length) {
+		if (my < 0 || my >= map.length) {
+			return true;
+		}
+
+		const mw = map[0].length;
+		// Toroidal wrap on X if width > 0
+		if (toroidalW > 0) {
+			mx = ((mx % mw) + mw) % mw;
+		} else if (mx < 0 || mx >= mw) {
 			return true;
 		}
 

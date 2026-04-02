@@ -133,13 +133,14 @@ function enterStage3Corridor(state: TheaterState): void {
 	state.messageTimer = 0;
 	state.footstepTimer = 0;
 	state.blockers = undefined;
+	state.toroidalWidth = corridor.map[0].length;
 
 	// Face patrols continuously — start at far end, heading toward player
 	state.stage3RushTimer = 0;
 	state.stage3RushInterval = 0;
 	state.stage3RushActive = true;
 	state.stage3FaceY = 3;
-	state.stage3FaceSpeed = 5 + Math.random() * 5;
+	state.stage3FaceSpeed = 10 + Math.random() * 10;
 	state.stage3DodgeCount = 0;
 
 	// Hide all sprites
@@ -168,14 +169,14 @@ export function tickStage3Corridor(state: TheaterState, dt: number): void {
 	face.y = state.stage3FaceY;
 	face.x = corridorCx;
 
-	// Reverse at corridor ends, pick a new speed (always faster than player)
+	// Reverse at corridor ends, pick a new speed
 	if (state.stage3FaceY >= corridorEnd) {
 		state.stage3FaceY = corridorEnd;
-		state.stage3FaceSpeed = -(5 + Math.random() * 5);
+		state.stage3FaceSpeed = -(10 + Math.random() * 10);
 		state.stage3DodgeCount++;
 	} else if (state.stage3FaceY <= 2) {
 		state.stage3FaceY = 2;
-		state.stage3FaceSpeed = 5 + Math.random() * 5;
+		state.stage3FaceSpeed = 10 + Math.random() * 10;
 		state.stage3DodgeCount++;
 	}
 
@@ -195,6 +196,7 @@ export function tickStage3Corridor(state: TheaterState, dt: number): void {
 
 /** Caught by the rushing face — sealed in a tiny cube forever. */
 function enterStage3Trapped(state: TheaterState): void {
+	state.toroidalWidth = 0;
 	const size = 3;
 	const map: TileMap = [];
 	for (let y = 0; y < size; y++) {
@@ -242,6 +244,7 @@ export function tickStage3Trapped(state: TheaterState, dt: number): void {
 
 /** Player reached the corridor exit — fade out, back to menu. */
 function enterStage3Exit(state: TheaterState): void {
+	state.toroidalWidth = 0;
 	state.phase = Phase.STAGE3_EXIT;
 	state.canMove = false;
 	state.corridorProgress = 0;

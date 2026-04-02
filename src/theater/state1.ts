@@ -241,6 +241,31 @@ export function tickSnakeCorridor(state: TheaterState, dt: number): void {
 	// Footstep sounds
 	tickFootsteps(state, dt, 0.8);
 
+	// Random screamer — face flash + camera spin
+	state.snakeScareTimer -= dt;
+	if (state.snakeScareTimer <= 0 && !state.vortexFlashActive) {
+		state.vortexFlashActive = true;
+		state.vortexFlashTimer = 0.25;
+		state.triggerAudio = 'flash';
+		state.snakeSpinTimer = 0.6;
+		state.snakeSpinDir = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 3);
+		state.snakeScareTimer = 4 + Math.random() * 10;
+	}
+
+	// Active flash countdown
+	if (state.vortexFlashActive) {
+		state.vortexFlashTimer -= dt;
+		if (state.vortexFlashTimer <= 0) {
+			state.vortexFlashActive = false;
+		}
+	}
+
+	// Camera spin effect
+	if (state.snakeSpinTimer > 0) {
+		state.camera.angle += state.snakeSpinDir * dt;
+		state.snakeSpinTimer -= dt;
+	}
+
 	// Check if player reached the exit
 	if (state.camera.y < state.snakeExitY + 0.5) {
 		enterStage2Dark(state);

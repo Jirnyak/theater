@@ -245,10 +245,10 @@ export function generateStage3Corridor(): {
 	endY: number;
 	length: number;
 } {
-	const width = 41;
-	const length = 120;
+	const width = 10;
+	const length = 100;
 	const map: TileMap = [];
-	const cx = Math.floor(width / 2); // 20
+	const cx = Math.floor(width / 2); // 10
 
 	// Fill: walls everywhere
 	for (let y = 0; y < length; y++) {
@@ -260,37 +260,32 @@ export function generateStage3Corridor(): {
 		map.push(row);
 	}
 
-	// Carve narrow main corridor (1 tile wide — just the center column)
+	// Carve narrow main corridor (1 tile wide — center column, full height)
 	for (let y = 1; y < length - 1; y++) {
 		map[y][cx] = Tile.FLOOR;
 	}
 
-	// Carve side corridors at regular intervals — long passages to hide in
+	// Carve full-width cross-passages for toroidal wrapping
+	// These span the entire map width so rays and movement wrap seamlessly
 	const alcoveYs: number[] = [];
-	const alcoveSpacing = 12 + Math.floor(Math.random() * 4);
-	let nextAlcove = 10 + Math.floor(Math.random() * 3);
-	let goLeft = Math.random() > 0.5;
+	const minGap = 4;
+	let y = 6 + Math.floor(Math.random() * 3);
+	while (y < length - 8) {
+		alcoveYs.push(y);
 
-	while (nextAlcove < length - 15) {
-		alcoveYs.push(nextAlcove);
-
-		// Long side corridor: 1 tile wide, extends to map edge
-		const dir = goLeft ? -1 : 1;
+		// Open 3 rows tall across the full map width
 		for (let dy = -1; dy <= 1; dy++) {
-			const ay = nextAlcove + dy;
-			if (ay <= 0 || ay >= length - 1) {
+			const row = y + dy;
+			if (row <= 0 || row >= length - 1) {
 				continue;
 			}
 
-			let ax = cx + dir;
-			while (ax >= 1 && ax < width - 1) {
-				map[ay][ax] = Tile.FLOOR;
-				ax += dir;
+			for (let x = 0; x < width; x++) {
+				map[row][x] = Tile.FLOOR;
 			}
 		}
 
-		nextAlcove += alcoveSpacing + Math.floor(Math.random() * 3);
-		goLeft = !goLeft;
+		y += minGap + Math.floor(Math.random() * 3);
 	}
 
 	// Exit door at the far end

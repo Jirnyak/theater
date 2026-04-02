@@ -11,6 +11,7 @@
 		generateNormalPerson,
 		generateScaryFace,
 		generateScaryFaceFrames,
+		generateScaryFaceFlash,
 	} from '../engine/sprites';
 	import {
 		type TheaterState,
@@ -49,6 +50,7 @@
 	let lastTime = 0;
 	let vortexFrames: ImageData[] = [];
 	let vortexFlashImg: ImageData | undefined;
+	let scaryFaceFlashImg: ImageData | undefined;
 	let vortexFrameIndex = 0;
 	let vortexFrameTimer = 0;
 	let faceFrames: ImageData[] = [];
@@ -178,8 +180,14 @@
 				break;
 			}
 
-			case p === Phase.NORMAL || (p >= Phase.POST_ENCOUNTER && p <= Phase.FINAL_WALL) || p === Phase.ROOMS || p === Phase.STAGE3_ATRIUM: {
+			case p === Phase.NORMAL || (p >= Phase.POST_ENCOUNTER && p <= Phase.FINAL_WALL) || p === Phase.ROOMS: {
 				playMusicLoop('assets/sound/theatre.mp3');
+				stopDrone();
+				break;
+			}
+
+			case p === Phase.STAGE3_ATRIUM: {
+				playMusicLoop('assets/sound/devil.mp3');
 				stopDrone();
 				break;
 			}
@@ -261,6 +269,7 @@
 		// Pre-generate vortex animation frames
 		vortexFrames = generateVortexFrames(12);
 		vortexFlashImg = generateVortexManFlash();
+		scaryFaceFlashImg = generateScaryFaceFlash();
 
 		raycaster = rc;
 
@@ -506,6 +515,9 @@
 				raycaster.fogColor = [0, 0, 0];
 			}
 
+			// Toroidal X wrapping for stage 3 corridor
+			raycaster.toroidalX = state.toroidalWidth;
+
 			raycaster.render(
 				canvas,
 				state.camera,
@@ -516,8 +528,13 @@
 			);
 
 			// Fullscreen vortex face flash overlay
-			if (state.vortexFlashActive && flashCanvas && vortexFlashImg) {
-				drawVortexFlash(flashCanvas, vortexFlashImg);
+			if (state.vortexFlashActive && flashCanvas) {
+				const flashImg = state.phase === Phase.STAGE2_CORRIDOR && scaryFaceFlashImg
+					? scaryFaceFlashImg
+					: vortexFlashImg;
+				if (flashImg) {
+					drawVortexFlash(flashCanvas, flashImg);
+				}
 			}
 
 			// Debug minimap
