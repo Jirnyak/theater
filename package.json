@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "xo"
+    "preview": "npm run build && wrangler dev",
+    "test": "xo",
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.32.2",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@tailwindcss/vite": "4.1.17",
     "@tsconfig/svelte": "^5.0.7",
@@ -21,6 +23,7 @@
     "typescript": "5.9.3",
     "vite": "7.2.4",
     "vite-plugin-singlefile": "2.3.0",
+    "wrangler": "^4.82.2",
     "xo": "^1.2.3"
   }
 }
