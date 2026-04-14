@@ -93,12 +93,23 @@ export class Raycaster {
 		const gh = Math.ceil((maxY - minY) * scale);
 		const grid = new Float32Array(gw * gh);
 
+		// Integer hash — no periodicity, no coordinate mixing
+		const ihash = (a: number, b: number): number => {
+			let h = ((a * 1_836_311) ^ (b * 2_654_435)) >>> 0;
+			h = (h ^ (h >>> 16)) >>> 0;
+			h = Math.imul(h, 73_244_475) >>> 0;
+			h = (h ^ (h >>> 16)) >>> 0;
+			return (h & 0x7F_FF_FF_FF) / 0x7F_FF_FF_FF;
+		};
+
 		for (let gy = 0; gy < gh; gy++) {
 			const worldY = minY + (gy + 0.5) / scale;
 			for (let gx = 0; gx < gw; gx++) {
 				const worldX = minX + (gx + 0.5) / scale;
 				let minDist = Infinity;
-				for (const seg of segs) {
+				let bestT = 0;
+				let bestSeg = 0;
+				for (const [si, seg] of segs.entries()) {
 					const ex = seg.x1 - seg.x0;
 					const ey = seg.y1 - seg.y0;
 					const segLength2 = ex * ex + ey * ey;
@@ -111,20 +122,52 @@ export class Raycaster {
 					const d = Math.sqrt(dx * dx + dy * dy);
 					if (d < minDist) {
 						minDist = d;
+						bestT = t;
+						bestSeg = si;
 					}
 				}
 
 				if (minDist < trailWidth) {
 					const edge = minDist / trailWidth;
-					// Smooth cubic falloff with organic noise
+					// Smooth cubic falloff with procedural noise at edges
 					const base = 1 - edge * edge * edge;
-					// Hash-based noise to break up edges
-					const nx = Math.sin(worldX * 17.3 + worldY * 31.7) * 0.5 + 0.5;
-					const ny = Math.cos(worldX * 23.1 - worldY * 13.9) * 0.5 + 0.5;
-					const noise = (nx * ny) * 0.5 + 0.5;
+					// Multi-octave integer hash noise — no sin/cos, no periodicity
+					const ix = Math.floor(worldX * 7);
+					const iy = Math.floor(worldY * 7);
+					const n1 = ihash(ix, iy);
+					const ix2 = Math.floor(worldX * 19);
+					const iy2 = Math.floor(worldY * 23);
+					const n2 = ihash(ix2 + 173, iy2 + 311);
+					const ix3 = Math.floor(worldX * 47);
+					const iy3 = Math.floor(worldY * 53);
+					const n3 = ihash(ix3 + 571, iy3 + 739);
+					const noise = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
 					// Wider solid center, noisy edges
 					const noiseInfluence = edge * edge;
-					grid[gy * gw + gx] = base * (1 - noiseInfluence + noiseInfluence * noise);
+					let value = base * (1 - noiseInfluence + noiseInfluence * noise);
+					// Stretched drip spots along the trajectory direction
+					const seg = segs[bestSeg];
+					const segDx = seg.x1 - seg.x0;
+					const segDy = seg.y1 - seg.y0;
+					const segLength = Math.sqrt(segDx * segDx + segDy * segDy);
+					if (segLength > 0.001) {
+						// Project position along the segment to get a monotonic coordinate
+						const along = bestSeg + bestT;
+						// Drip spots: hash-based blobs stretched along trail
+						const dripPhase = along * 3.7;
+						const dripIdx = Math.floor(dripPhase);
+						const dripFrac = dripPhase - dripIdx;
+						const dripStrength = ihash(dripIdx + 997, dripIdx * 3 + 449);
+						// Elongated spots: strong at centre of drip, fade along segment
+						const dripProfile = 1 - Math.abs(dripFrac - 0.5) * 2;
+						const dripAlpha = dripStrength * dripProfile * dripProfile;
+						// Perpendicular expansion for drips near centre of trail
+						const perpFade = 1 - Math.min(1, edge * 1.8);
+						const dripContrib = dripAlpha * perpFade * 0.45;
+						value = Math.min(1, value + dripContrib);
+					}
+
+					grid[gy * gw + gx] = Math.max(0, value);
 				}
 			}
 		}
@@ -440,10 +483,13 @@ export class Raycaster {
 				if (gx >= 0 && gx < this._bloodGridW && gy >= 0 && gy < this._bloodGridH) {
 					bloodAlpha = grid[gy * this._bloodGridW + gx];
 					if (bloodAlpha > 0) {
-						// Procedural variation using world coords for seamless noise
-						const bh = Math.sin(ceilX * 11.3 + ceilY * 7.7)
-							* Math.cos(ceilX * 5.1 - ceilY * 13.3);
-						bloodAlpha *= 0.7 + bh * 0.3;
+						// Procedural variation via integer hash — no sin/cos periodicity
+						const hx = Math.floor(ceilX * 11);
+						const hy = Math.floor(ceilY * 13);
+						let bh = (((hx * 1_836_311) ^ (hy * 2_654_435)) >>> 0);
+						bh = (bh ^ (bh >>> 16)) >>> 0;
+						bh = (bh & 0x7F_FF_FF_FF) / 0x7F_FF_FF_FF;
+						bloodAlpha *= 0.7 + (bh - 0.5) * 0.6;
 						bloodAlpha = Math.max(0, bloodAlpha);
 					}
 				}

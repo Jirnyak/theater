@@ -26,11 +26,17 @@
 
 	// Start title music
 	$effect(() => {
-		const track = completedStage >= 3
-			? 'assets/sound/catharsis.mp3'
-			: (completedStage > 0
-				? 'assets/sound/ertaeht.mp3'
-				: 'assets/sound/theatre.mp3');
+		let track: string;
+		if (completedStage >= 3) {
+			track = 'assets/sound/catharsis.mp3';
+		} else if (completedStage === 2) {
+			track = 'assets/sound/theater-slow.mp3';
+		} else if (completedStage > 0) {
+			track = 'assets/sound/ertaeht.mp3';
+		} else {
+			track = 'assets/sound/theatre.mp3';
+		}
+
 		playMusicLoop(track);
 	});
 
@@ -350,23 +356,65 @@
 		const doorW = 26;
 		const doorH = 55;
 		const doorY = by + 105;
-		// Door recess (dark)
-		ctx.fillStyle = '#050508';
-		ctx.fillRect(doorX - 2, doorY - 2, doorW + 4, doorH + 2);
-		// Door panels
-		ctx.fillStyle = '#1a1210';
-		ctx.fillRect(doorX, doorY, doorW, doorH);
-		// Door frame
-		ctx.fillStyle = '#3a2a2a';
-		ctx.fillRect(doorX - 1, doorY, 1, doorH);
-		ctx.fillRect(doorX + doorW, doorY, 1, doorH);
-		ctx.fillRect(doorX - 1, doorY - 1, doorW + 2, 1);
-		// Door split line
-		ctx.fillStyle = '#0a0808';
-		ctx.fillRect(doorX + Math.floor(doorW / 2), doorY, 1, doorH);
-		// Door handle (small dot)
-		ctx.fillStyle = '#6a5a3a';
-		ctx.fillRect(doorX + doorW - 5, doorY + Math.floor(doorH / 2), 2, 2);
+
+		if (completedStage >= 3) {
+			// Catharsis: doors flung open, warm yellow light pouring out
+			// Bright interior glow
+			const doorCx = doorX + doorW / 2;
+			const doorCy = doorY + doorH / 2;
+			const glowGrad = ctx.createRadialGradient(doorCx, doorCy, 3, doorCx, doorCy, 70);
+			glowGrad.addColorStop(0, 'rgba(255, 210, 80, 0.5)');
+			glowGrad.addColorStop(0.4, 'rgba(200, 150, 40, 0.25)');
+			glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+			ctx.fillStyle = glowGrad;
+			ctx.fillRect(doorX - 50, doorY - 40, doorW + 100, doorH + 60);
+			// Door recess — bright warm light
+			ctx.fillStyle = '#c8a030';
+			ctx.fillRect(doorX - 2, doorY - 2, doorW + 4, doorH + 2);
+			// Interior glow (brighter center)
+			ctx.fillStyle = '#e8c848';
+			ctx.fillRect(doorX, doorY, doorW, doorH);
+			// Even brighter core
+			ctx.fillStyle = '#f0d860';
+			ctx.fillRect(doorX + 4, doorY + 4, doorW - 8, doorH - 8);
+			// Door frame
+			ctx.fillStyle = '#5a4a2a';
+			ctx.fillRect(doorX - 1, doorY, 1, doorH);
+			ctx.fillRect(doorX + doorW, doorY, 1, doorH);
+			ctx.fillRect(doorX - 1, doorY - 1, doorW + 2, 1);
+			// Left door panel — swung open (angled, thinner)
+			ctx.fillStyle = '#2a2018';
+			ctx.fillRect(doorX - 5, doorY, 4, doorH);
+			// Right door panel — swung open
+			ctx.fillRect(doorX + doorW + 1, doorY, 4, doorH);
+			// Light spill on ground in front of door
+			const spillY = doorY + doorH;
+			const spillGrad = ctx.createRadialGradient(doorCx, spillY, 5, doorCx, spillY + 30, 45);
+			spillGrad.addColorStop(0, 'rgba(220, 180, 60, 0.35)');
+			spillGrad.addColorStop(0.6, 'rgba(180, 130, 30, 0.12)');
+			spillGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+			ctx.fillStyle = spillGrad;
+			ctx.fillRect(doorX - 30, doorY + doorH - 5, doorW + 60, 50);
+		} else {
+			// Normal: closed dark doors
+			// Door recess (dark)
+			ctx.fillStyle = '#050508';
+			ctx.fillRect(doorX - 2, doorY - 2, doorW + 4, doorH + 2);
+			// Door panels
+			ctx.fillStyle = '#1a1210';
+			ctx.fillRect(doorX, doorY, doorW, doorH);
+			// Door frame
+			ctx.fillStyle = '#3a2a2a';
+			ctx.fillRect(doorX - 1, doorY, 1, doorH);
+			ctx.fillRect(doorX + doorW, doorY, 1, doorH);
+			ctx.fillRect(doorX - 1, doorY - 1, doorW + 2, 1);
+			// Door split line
+			ctx.fillStyle = '#0a0808';
+			ctx.fillRect(doorX + Math.floor(doorW / 2), doorY, 1, doorH);
+			// Door handle (small dot)
+			ctx.fillStyle = '#6a5a3a';
+			ctx.fillRect(doorX + doorW - 5, doorY + Math.floor(doorH / 2), 2, 2);
+		}
 
 		// Pediment (triangle)
 		ctx.fillStyle = '#3a2828';
