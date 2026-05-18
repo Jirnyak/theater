@@ -14,10 +14,23 @@ import {type PathSegment} from './maps';
 const INTERNAL_W = 320;
 const INTERNAL_H = 200;
 const TEX_SIZE = 64;
+type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
+type RenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+function createRenderCanvas(width: number, height: number): RenderCanvas {
+	if (typeof OffscreenCanvas === 'function') {
+		return new OffscreenCanvas(width, height);
+	}
+
+	const canvas = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	return canvas;
+}
 
 export class Raycaster {
-	private readonly offscreen: OffscreenCanvas;
-	private readonly ctx: OffscreenCanvasRenderingContext2D;
+	private readonly offscreen: RenderCanvas;
+	private readonly ctx: RenderContext;
 	private readonly depthBuffer = new Float64Array(INTERNAL_W);
 
 	private textures!: TextureAtlas;
@@ -57,13 +70,13 @@ export class Raycaster {
 	toroidalX = 0;
 
 	constructor() {
-		this.offscreen = new OffscreenCanvas(INTERNAL_W, INTERNAL_H);
+		this.offscreen = createRenderCanvas(INTERNAL_W, INTERNAL_H);
 		const c = this.offscreen.getContext('2d', {willReadFrequently: true});
 		if (!c) {
 			throw new Error('Failed to get 2d context');
 		}
 
-		this.ctx = c;
+		this.ctx = c as RenderContext;
 		this.ctx.imageSmoothingEnabled = false;
 	}
 

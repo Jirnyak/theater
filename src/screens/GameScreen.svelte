@@ -44,7 +44,8 @@
 	let flashCanvas: HTMLCanvasElement | undefined = $state();
 	let debugCanvas: HTMLCanvasElement | undefined = $state();
 	let msgCanvas: HTMLCanvasElement | undefined = $state();
-	const state: TheaterState = $state(createTheaterState(completedStage + 1));
+	const initialStage = untrack(() => completedStage + 1);
+	const state: TheaterState = $state(createTheaterState(initialStage));
 	let raycaster: Raycaster | undefined = $state();
 	let animFrame = 0;
 	let lastTime = 0;
@@ -57,6 +58,34 @@
 	let faceFrameIndex = 0;
 	let faceFrameTimer = 0;
 	let lastMazePosterSeeds: number[] = [];
+	const TOUCH_STICK_RADIUS = 44;
+	const TOUCH_DEADZONE = 0.08;
+	const touchInput = {
+		forward: 0,
+		strafe: 0,
+		rotate: 0,
+		movePointerId: -1,
+		turnPointerId: -1,
+		moveStartX: 0,
+		moveStartY: 0,
+		turnStartX: 0,
+	};
+	let moveKnobX = $state(0);
+	let moveKnobY = $state(0);
+	let turnKnobX = $state(0);
+	const moveKnobStyle = $derived(`transform: translate(calc(-50% + ${moveKnobX}px), calc(-50% + ${moveKnobY}px));`);
+	const turnKnobStyle = $derived(`transform: translate(calc(-50% + ${turnKnobX}px), -50%);`);
+
+	function createImageCanvas(width: number, height: number): HTMLCanvasElement | OffscreenCanvas {
+		if (typeof OffscreenCanvas === 'function') {
+			return new OffscreenCanvas(width, height);
+		}
+
+		const tmpCanvas = document.createElement('canvas');
+		tmpCanvas.width = width;
+		tmpCanvas.height = height;
+		return tmpCanvas;
+	}
 
 	function drawVortexFlash(fc: HTMLCanvasElement, img: ImageData): void {
 		const ctx = fc.getContext('2d');
@@ -75,8 +104,12 @@
 		const jy = (Math.random() - 0.5) * 40;
 
 		// Put sprite on a temp canvas, then drawImage scaled
-		const tmp = new OffscreenCanvas(img.width, img.height);
-		const tc = tmp.getContext('2d')!;
+		const tmp = createImageCanvas(img.width, img.height);
+		const tc = tmp.getContext('2d');
+		if (!tc) {
+			return;
+		}
+
 		tc.putImageData(img, 0, 0);
 
 		const scale = Math.min(w, h) * 0.8;
@@ -147,6 +180,100 @@
 
 	// Input state
 	const keys = new Set<string>();
+
+	function clampInput(value: number): number {
+		return Math.max(-1, Math.min(1, value));
+	}
+
+	function applyDeadzone(value: number): number {
+		return Math.abs(value) < TOUCH_DEADZONE ? 0 : value;
+	}
+
+	function capturePointer(target: EventTarget | null, pointerId: number): void {
+		if (target instanceof HTMLElement) {
+			target.setPointerCapture(pointerId);
+		}
+	}
+
+	function releasePointer(target: EventTarget | null, pointerId: number): void {
+		if (target instanceof HTMLElement && target.hasPointerCapture(pointerId)) {
+			target.releasePointerCapture(pointerId);
+		}
+	}
+
+	function updateMovePointer(e: PointerEvent): void {
+		const dx = e.clientX - touchInput.moveStartX;
+		const dy = e.clientY - touchInput.moveStartY;
+		const length = Math.sqrt(dx * dx + dy * dy);
+		const scale = length > TOUCH_STICK_RADIUS ? TOUCH_STICK_RADIUS / length : 1;
+		moveKnobX = dx * scale;
+		moveKnobY = dy * scale;
+		touchInput.strafe = applyDeadzone(clampInput(moveKnobX / TOUCH_STICK_RADIUS));
+		touchInput.forward = applyDeadzone(clampInput(-moveKnobY / TOUCH_STICK_RADIUS));
+	}
+
+	function onMovePointerDown(e: PointerEvent): void {
+		e.preventDefault();
+		resumeAudio();
+		touchInput.movePointerId = e.pointerId;
+		touchInput.moveStartX = e.clientX;
+		touchInput.moveStartY = e.clientY;
+		capturePointer(e.currentTarget, e.pointerId);
+		updateMovePointer(e);
+	}
+
+	function onMovePointerMove(e: PointerEvent): void {
+		if (e.pointerId === touchInput.movePointerId) {
+			e.preventDefault();
+			updateMovePointer(e);
+		}
+	}
+
+	function resetMovePointer(e: PointerEvent): void {
+		if (e.pointerId !== touchInput.movePointerId) {
+			return;
+		}
+
+		releasePointer(e.currentTarget, e.pointerId);
+		touchInput.movePointerId = -1;
+		touchInput.forward = 0;
+		touchInput.strafe = 0;
+		moveKnobX = 0;
+		moveKnobY = 0;
+	}
+
+	function updateTurnPointer(e: PointerEvent): void {
+		const dx = clampInput((e.clientX - touchInput.turnStartX) / TOUCH_STICK_RADIUS) * TOUCH_STICK_RADIUS;
+		turnKnobX = dx;
+		touchInput.rotate = applyDeadzone(dx / TOUCH_STICK_RADIUS);
+	}
+
+	function onTurnPointerDown(e: PointerEvent): void {
+		e.preventDefault();
+		resumeAudio();
+		touchInput.turnPointerId = e.pointerId;
+		touchInput.turnStartX = e.clientX;
+		capturePointer(e.currentTarget, e.pointerId);
+		updateTurnPointer(e);
+	}
+
+	function onTurnPointerMove(e: PointerEvent): void {
+		if (e.pointerId === touchInput.turnPointerId) {
+			e.preventDefault();
+			updateTurnPointer(e);
+		}
+	}
+
+	function resetTurnPointer(e: PointerEvent): void {
+		if (e.pointerId !== touchInput.turnPointerId) {
+			return;
+		}
+
+		releasePointer(e.currentTarget, e.pointerId);
+		touchInput.turnPointerId = -1;
+		touchInput.rotate = 0;
+		turnKnobX = 0;
+	}
 
 	// ── Render message text on pixel canvas ─────────────────────
 	$effect(() => {
@@ -302,14 +429,21 @@
 				return;
 			}
 
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
+			const viewport = globalThis.visualViewport;
+			const width = viewport?.width ?? window.innerWidth;
+			const height = viewport?.height ?? window.innerHeight;
+			canvas.width = Math.max(1, Math.round(width));
+			canvas.height = Math.max(1, Math.round(height));
 		}
 
 		resize();
 		window.addEventListener('resize', resize);
+		globalThis.visualViewport?.addEventListener('resize', resize);
+		globalThis.visualViewport?.addEventListener('scroll', resize);
 		return () => {
 			window.removeEventListener('resize', resize);
+			globalThis.visualViewport?.removeEventListener('resize', resize);
+			globalThis.visualViewport?.removeEventListener('scroll', resize);
 		};
 	});
 
@@ -338,7 +472,10 @@
 		}
 
 		function onClick() {
-			canvas?.requestPointerLock();
+			try {
+				canvas?.requestPointerLock();
+			} catch {}
+
 			resumeAudio();
 		}
 
@@ -389,6 +526,10 @@
 		if (keys.has('ArrowRight')) {
 			rotate = 1;
 		}
+
+		forward = clampInput(forward + touchInput.forward);
+		strafe = clampInput(strafe + touchInput.strafe);
+		rotate = clampInput(rotate + touchInput.rotate);
 
 		// Move player
 		movePlayer(state, forward, strafe, rotate, dt);
@@ -605,7 +746,7 @@
 	}
 </script>
 
-<div class="absolute inset-0 cursor-none bg-black">
+<div class="absolute inset-0 cursor-none touch-none select-none bg-black">
 	<canvas
 		bind:this={canvas}
 		class="block h-full w-full"
@@ -614,7 +755,7 @@
 
 	<!-- Bottom text bar (pixel-rendered) -->
 	{#if state.messageText}
-		<div class="pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center bg-black/80 py-2">
+		<div class="message-bar pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center bg-black/80 py-2">
 			<canvas
 				bind:this={msgCanvas}
 				width="320"
@@ -624,6 +765,34 @@
 			></canvas>
 		</div>
 	{/if}
+
+	<div class="mobile-controls pointer-events-none absolute inset-0">
+		<button
+			type="button"
+			class="mobile-pad mobile-pad--move pointer-events-auto"
+			aria-label="Движение"
+			onpointerdown={onMovePointerDown}
+			onpointermove={onMovePointerMove}
+			onpointerup={resetMovePointer}
+			onpointercancel={resetMovePointer}
+			onlostpointercapture={resetMovePointer}
+		>
+			<span class="mobile-knob" style={moveKnobStyle}></span>
+		</button>
+
+		<button
+			type="button"
+			class="mobile-pad mobile-pad--turn pointer-events-auto"
+			aria-label="Поворот камеры"
+			onpointerdown={onTurnPointerDown}
+			onpointermove={onTurnPointerMove}
+			onpointerup={resetTurnPointer}
+			onpointercancel={resetTurnPointer}
+			onlostpointercapture={resetTurnPointer}
+		>
+			<span class="mobile-knob mobile-knob--turn" style={turnKnobStyle}></span>
+		</button>
+	</div>
 
 	<!-- Vortex flash overlay canvas -->
 	<canvas
@@ -642,3 +811,95 @@
 		></canvas>
 	{/if}
 </div>
+
+<style>
+	.mobile-controls {
+		display: none;
+	}
+
+	.mobile-pad {
+		position: absolute;
+		bottom: max(1rem, env(safe-area-inset-bottom));
+		width: 7rem;
+		height: 7rem;
+		padding: 0;
+		border: 1px solid rgb(255 255 255 / 22%);
+		border-radius: 999px;
+		background: rgb(0 0 0 / 24%);
+		box-shadow: inset 0 0 24px rgb(255 255 255 / 8%);
+		touch-action: none;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.mobile-pad--move {
+		left: max(1rem, env(safe-area-inset-left));
+	}
+
+	.mobile-pad--turn {
+		right: max(1rem, env(safe-area-inset-right));
+	}
+
+	.mobile-pad::before,
+	.mobile-pad::after {
+		position: absolute;
+		content: '';
+		background: rgb(255 255 255 / 16%);
+	}
+
+	.mobile-pad::before {
+		top: 50%;
+		left: 1rem;
+		right: 1rem;
+		height: 1px;
+	}
+
+	.mobile-pad--move::after {
+		top: 1rem;
+		bottom: 1rem;
+		left: 50%;
+		width: 1px;
+	}
+
+	.mobile-knob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 2.6rem;
+		height: 2.6rem;
+		border: 1px solid rgb(255 255 255 / 36%);
+		border-radius: 999px;
+		background: rgb(255 255 255 / 14%);
+		box-shadow: 0 0 14px rgb(255 255 255 / 10%);
+		pointer-events: none;
+	}
+
+	.mobile-knob--turn {
+		height: 2.2rem;
+	}
+
+	@media (hover: none), (pointer: coarse) {
+		.mobile-controls {
+			display: block;
+		}
+
+		.message-bar {
+			bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 7.25rem);
+		}
+	}
+
+	@media (max-width: 520px), (max-height: 520px) {
+		.mobile-pad {
+			width: 6rem;
+			height: 6rem;
+		}
+
+		.mobile-knob {
+			width: 2.25rem;
+			height: 2.25rem;
+		}
+
+		.mobile-knob--turn {
+			height: 2rem;
+		}
+	}
+</style>

@@ -37,7 +37,7 @@
 	}
 </script>
 
-<div class="h-screen w-screen overflow-hidden bg-black">
+<div class="h-screen w-screen overflow-hidden bg-black" style="height: 100dvh;">
 	{#if screen === 'title'}
 		<TitleScreen {onNewGame} {onLoadGame} {onDebugMaze} {onDebugStage} {completedStage} />
 	{:else if screen === 'game'}

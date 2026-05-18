@@ -5,11 +5,16 @@
   body,
   #app {
     height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    overscroll-behavior: none;
     background: #000;
     cursor: default;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 

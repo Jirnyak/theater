@@ -111,7 +111,7 @@
 	}
 
 	// ── Theater building click (easter egg: click window while bileter visible) ──
-	function onTheaterClick(event: MouseEvent) {
+	function onTheaterClick(event: PointerEvent) {
 		if (!bileterVisible || !theaterCanvas || !onDebugStage) {
 			return;
 		}
@@ -140,7 +140,7 @@
 	}
 
 	// ── Menu canvas click detection ─────────────────────────────
-	function onMenuClick(event: MouseEvent) {
+	function onMenuClick(event: PointerEvent) {
 		resumeAudio();
 		const canvas = menuCanvas;
 		if (!canvas) {
@@ -174,7 +174,7 @@
 		}
 	}
 
-	function onMenuMove(event: MouseEvent) {
+	function onMenuMove(event: PointerEvent) {
 		const canvas = menuCanvas;
 		if (!canvas) {
 			return;
@@ -469,16 +469,18 @@
 	}
 </script>
 
-<div class="absolute inset-0 flex flex-col items-center justify-center bg-black" onclick={resumeAudio}>
+<div
+	class="absolute inset-0 flex flex-col items-center justify-center bg-black"
+	style="--title-width: min(640px, 100vw, calc(100dvh * 0.91));"
+>
 	<!-- Theater building sprite (procedural) -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<canvas
 		bind:this={theaterCanvas}
 		class="block"
 		width="320"
 		height="240"
-		style="image-rendering: pixelated; width: 640px; height: 480px;"
-		onclick={onTheaterClick}
+		style="image-rendering: pixelated; width: var(--title-width); height: auto; touch-action: manipulation;"
+		onpointerup={onTheaterClick}
 	></canvas>
 
 	<!-- Menu (rendered on low-res canvas → scaled up for pixel look) -->
@@ -487,10 +489,10 @@
 		class="block"
 		width="320"
 		height="120"
-		style="image-rendering: pixelated; width: 640px; height: 240px; cursor: default; margin-top: -8px;"
-		onclick={onMenuClick}
-		onmousemove={onMenuMove}
-		onmouseleave={onMenuLeave}
+		style="image-rendering: pixelated; width: var(--title-width); height: auto; cursor: default; margin-top: calc(var(--title-width) / -80); touch-action: manipulation;"
+		onpointerup={onMenuClick}
+		onpointermove={onMenuMove}
+		onpointerleave={onMenuLeave}
 	></canvas>
 
 	{#if bileterVisible && bileterSprite}
@@ -499,7 +501,7 @@
 			class="pointer-events-none absolute"
 			width={bileterSprite.width}
 			height={bileterSprite.height}
-			style="image-rendering: pixelated; width: {bileterSprite.width * 4}px; height: {bileterSprite.height * 4}px;"
+			style="image-rendering: pixelated; width: min({bileterSprite.width * 4}px, 80vw); height: auto;"
 		></canvas>
 	{/if}
 </div>
