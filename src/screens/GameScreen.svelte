@@ -73,6 +73,7 @@
 	let moveKnobX = $state(0);
 	let moveKnobY = $state(0);
 	let turnKnobX = $state(0);
+	let touchControlsEnabled = $state(false);
 	const moveKnobStyle = $derived(`transform: translate(calc(-50% + ${moveKnobX}px), calc(-50% + ${moveKnobY}px));`);
 	const turnKnobStyle = $derived(`transform: translate(calc(-50% + ${turnKnobX}px), -50%);`);
 
@@ -180,6 +181,14 @@
 
 	// Input state
 	const keys = new Set<string>();
+
+	function shouldUseTouchControls(): boolean {
+		const ua = navigator.userAgent;
+		const mobileUa = /android|iphone|ipad|ipod|mobile/i.test(ua);
+		const touchCapable = navigator.maxTouchPoints > 0 || 'ontouchstart' in globalThis;
+		const compactViewport = Math.min(window.innerWidth, window.innerHeight) < 900;
+		return mobileUa || (touchCapable && compactViewport);
+	}
 
 	function clampInput(value: number): number {
 		return Math.max(-1, Math.min(1, value));
@@ -295,6 +304,21 @@
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
 		ctx.fillText(state.messageText, 160, 8);
+	});
+
+	// ── Touch control visibility ────────────────────────────────
+	$effect(() => {
+		function updateTouchControls() {
+			touchControlsEnabled = shouldUseTouchControls();
+		}
+
+		updateTouchControls();
+		window.addEventListener('resize', updateTouchControls);
+		globalThis.visualViewport?.addEventListener('resize', updateTouchControls);
+		return () => {
+			window.removeEventListener('resize', updateTouchControls);
+			globalThis.visualViewport?.removeEventListener('resize', updateTouchControls);
+		};
 	});
 
 	// ── Phase-based background music ──────────────────────────────
@@ -755,7 +779,10 @@
 
 	<!-- Bottom text bar (pixel-rendered) -->
 	{#if state.messageText}
-		<div class="message-bar pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center bg-black/80 py-2">
+		<div
+			class="message-bar pointer-events-none absolute bottom-0 left-0 right-0 flex justify-center bg-black/80 py-2"
+			class:message-bar--mobile={touchControlsEnabled}
+		>
 			<canvas
 				bind:this={msgCanvas}
 				width="320"
@@ -766,33 +793,35 @@
 		</div>
 	{/if}
 
-	<div class="mobile-controls pointer-events-none absolute inset-0">
-		<button
-			type="button"
-			class="mobile-pad mobile-pad--move pointer-events-auto"
-			aria-label="Движение"
-			onpointerdown={onMovePointerDown}
-			onpointermove={onMovePointerMove}
-			onpointerup={resetMovePointer}
-			onpointercancel={resetMovePointer}
-			onlostpointercapture={resetMovePointer}
-		>
-			<span class="mobile-knob" style={moveKnobStyle}></span>
-		</button>
+	{#if touchControlsEnabled}
+		<div class="mobile-controls pointer-events-none absolute inset-0">
+			<button
+				type="button"
+				class="mobile-pad mobile-pad--move pointer-events-auto"
+				aria-label="Движение"
+				onpointerdown={onMovePointerDown}
+				onpointermove={onMovePointerMove}
+				onpointerup={resetMovePointer}
+				onpointercancel={resetMovePointer}
+				onlostpointercapture={resetMovePointer}
+			>
+				<span class="mobile-knob" style={moveKnobStyle}></span>
+			</button>
 
-		<button
-			type="button"
-			class="mobile-pad mobile-pad--turn pointer-events-auto"
-			aria-label="Поворот камеры"
-			onpointerdown={onTurnPointerDown}
-			onpointermove={onTurnPointerMove}
-			onpointerup={resetTurnPointer}
-			onpointercancel={resetTurnPointer}
-			onlostpointercapture={resetTurnPointer}
-		>
-			<span class="mobile-knob mobile-knob--turn" style={turnKnobStyle}></span>
-		</button>
-	</div>
+			<button
+				type="button"
+				class="mobile-pad mobile-pad--turn pointer-events-auto"
+				aria-label="Поворот камеры"
+				onpointerdown={onTurnPointerDown}
+				onpointermove={onTurnPointerMove}
+				onpointerup={resetTurnPointer}
+				onpointercancel={resetTurnPointer}
+				onlostpointercapture={resetTurnPointer}
+			>
+				<span class="mobile-knob mobile-knob--turn" style={turnKnobStyle}></span>
+			</button>
+		</div>
+	{/if}
 
 	<!-- Vortex flash overlay canvas -->
 	<canvas
@@ -813,10 +842,6 @@
 </div>
 
 <style>
-	.mobile-controls {
-		display: none;
-	}
-
 	.mobile-pad {
 		position: absolute;
 		bottom: max(1rem, env(safe-area-inset-bottom));
@@ -877,14 +902,8 @@
 		height: 2.2rem;
 	}
 
-	@media (hover: none), (pointer: coarse) {
-		.mobile-controls {
-			display: block;
-		}
-
-		.message-bar {
-			bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 7.25rem);
-		}
+	.message-bar--mobile {
+		bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 7.25rem);
 	}
 
 	@media (max-width: 520px), (max-height: 520px) {
