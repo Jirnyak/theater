@@ -6,47 +6,25 @@
 [![Language](https://img.shields.io/badge/Made%20with-JavaScript-yellow?style=for-the-badge&logo=javascript)]()
 [![Open Source](https://img.shields.io/badge/Open%20Source-❤️-brightgreen?style=for-the-badge)]()
 
-> **An experimental engine for interactive cyber-theater, generative visual performances, and audio-reactive stage design — where code is the stage.**
+> **Experimental engine for interactive cyber-theater, generative visual performances and audio-reactive stage design.**
 
 </div>
 
 ---
 
-## 📖 About
+> **Экспериментальный кибер-театр и интерактивная движковая сцена для визуальных перформансов.**
 
-**CYBER-THEATER** is an experimental creative-coding engine designed to power interactive live visual performances, generative art installations, and audio-reactive stage experiences. Think: code as theater. The audience is inside the machine.
+### 🌟 Ключевые возможности
+* 🎨 **Интерактивный Визуальный Рендеринг:** Генеративные сцены, реактивный свет и сценические эффекты.
+* 🔊 **Аудио-Синхронизация:** Реакция графики на звуковые частоты и голос.
+* 📜 **Народная Лицензия:** Свободное использование для культурных и творческих проектов.
 
----
-
-## ✨ Features
-
-- 🎨 **Real-Time Generative Visuals** — procedurally animated scenes that evolve live on stage
-- 🔊 **Audio Reactivity** — FFT-based sound analysis drives visual morphing and intensity
-- 💡 **Dynamic Stage Lighting Simulation** — programmable virtual stage lights with physics-based diffusion
-- 🎭 **Scene Scripting API** — write theatrical scenes in plain JavaScript
-- 🌐 **Browser-First** — runs in any modern browser, no plugins
-
----
-
-## 🚀 Quick Start
-
-```bash
-git clone https://github.com/Jirnyak/theater.git
-cd theater
-npx http-server ./
-```
-
----
-
-## 📜 License
-
-Open Creative License — Jirnyak & Adolf Petushkov. See [LICENSE.md](LICENSE.md).
 
 ---
 
 <details>
 <summary>🇷🇺 Русская Версия</summary>
 
-**КИБЕР-ТЕАТР** — экспериментальный движок для интерактивных перформансов, генеративных визуальных сцен и аудио-реактивных арт-инсталляций. Графика реагирует на звук. Сцены пишутся на JavaScript. Зритель — внутри машины.
+**КИБЕР-ТЕАТР** — движок для интерактивных перформансов и генеративных визуальных сцен с аудио-реактивной графикой на JavaScript.
 
 </details>
