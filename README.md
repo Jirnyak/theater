@@ -1,5 +1,8 @@
 <div align="center">
 
+![THEATER Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/pixel_banner.jpg)
+
+
 # theater — Technical System Architecture & Specification
 
 [![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
