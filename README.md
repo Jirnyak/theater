@@ -6,11 +6,8 @@
 
 [![License](https://img.shields.io/badge/License-Open%20Creative-blueviolet?style=for-the-badge)](LICENSE.md)
 [![Language](https://img.shields.io/badge/Tech-TypeScript%20%2F%20Svelte-orange?style=for-the-badge&logo=svelte)]()
-[![Open Source](https://img.shields.io/badge/Open%20Source-❤️-brightgreen?style=for-the-badge)]()
 
 > **Svelte + TypeScript experimental engine for interactive cyber-theater, generative visual performances and audio-reactive stage design.**
-
-[▶️ Demo](#) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [🤝 Contribute](#)
 
 </div>
 
