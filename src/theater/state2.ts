@@ -17,6 +17,7 @@ import {
 	isInCorridor,
 	tickFootsteps,
 } from './game';
+import {enterInfiniteCorridor} from './state0';
 
 // ── Stage 3: Atrium → Corridor → Catharsis ────────────────────
 
@@ -184,7 +185,7 @@ export function tickStage3Corridor(state: TheaterState, dt: number): void {
 	const playerInCenter = Math.abs(state.camera.x - corridorCx) < 0.8;
 	const faceNearPlayer = Math.abs(face.y - state.camera.y) < 1.5;
 	if (playerInCenter && faceNearPlayer) {
-		enterStage3Trapped(state);
+		enterInfiniteCorridor(state);
 		return;
 	}
 
@@ -195,7 +196,7 @@ export function tickStage3Corridor(state: TheaterState, dt: number): void {
 }
 
 /** Caught by the rushing face — sealed in a tiny cube forever. */
-function enterStage3Trapped(state: TheaterState): void {
+export function enterStage3Trapped(state: TheaterState): void {
 	state.toroidalWidth = 0;
 	const size = 3;
 	const map: TileMap = [];

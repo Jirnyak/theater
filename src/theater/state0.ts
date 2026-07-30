@@ -32,7 +32,7 @@ import {
 	rollWallTexts,
 } from './game';
 import {enterStage2Lobby} from './state1';
-import {enterStage3Atrium} from './state2';
+import {enterStage3Atrium, enterStage3Trapped} from './state2';
 import {enterCatharsis} from './state3';
 
 // ── Phase ticks ─────────────────────────────────────────────────
@@ -377,7 +377,7 @@ export function tickMaze(state: TheaterState, dt: number): void {
 	const entity = state.sprites[0];
 	const distToEntity = Math.sqrt((state.camera.x - entity.x) ** 2 + (state.camera.y - entity.y) ** 2);
 	if (distToEntity < 0.8) {
-		enterInfiniteCorridor(state);
+		enterStage3Trapped(state);
 		return;
 	}
 
@@ -631,7 +631,7 @@ function moveEntityStep(state: TheaterState, entity: {x: number; y: number}, dx:
 
 // ── Infinite corridor (caught by bileter) ───────────────────────
 
-function enterInfiniteCorridor(state: TheaterState): void {
+export function enterInfiniteCorridor(state: TheaterState): void {
 	state.triggerAudio = 'scream';
 	const corridor = generateInfiniteCorridor();
 	state.map = corridor.map;

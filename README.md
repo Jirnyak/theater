@@ -2,6 +2,11 @@
 
 ![THEATER Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/pixel_banner.jpg)
 
+- **Игра на itch.io:** [tenevik.itch.io/theatre](https://tenevik.itch.io/theatre)
+- **Первоисточник (Крипипаста):** [The Theater (Secret Files Wiki)](https://secret-files.fandom.com/ru/wiki/The_Theater)
+
+
+Билетёр встречает вас в фойе. Коридор ведёт в темноту. С каждым циклом реальность искажается сильнее — пока потустороннее не прорывается наружу.
 
 # theater — Technical System Architecture & Specification
 
