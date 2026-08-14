@@ -22,5 +22,11 @@
     "vite": "7.2.4",
     "vite-plugin-singlefile": "2.3.0",
     "xo": "^1.2.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jirnyak/theater"
+  },
+  "author": "Jirnyak & Adolf Petushkov",
+  "license": "MIT"
 }
