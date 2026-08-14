@@ -215,6 +215,84 @@ The section below contains 100% of the original developer documentation, specifi
 
 ---
 
+
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/theater_stage.jpg" width="100%" alt="Theater Baroque Opera Stage & Real-Time Dramatic Actor State Engine"/>
+
+</div>
+
+---
+
+## 🎭 Dramatic State Machines, DMX-512 Lighting & Audience Acoustics
+
+Theater is an interactive theatrical production and drama engine coordinating actor blocking, lighting cues, dialogue timing, and audience emotional resonance:
+
+```mermaid
+graph TD
+    A[Play Script AST: Acts, Scenes, Monologues, Cues] --> B[Actor State Machine: Blocking, Gaze, Intonation]
+    A --> C[DMX-512 Stage Lighting & Spotlight Sequencer]
+    A --> D[Soundscapes & Acoustic Spatial Reverberation]
+    B & C & D --> E[Real-Time Scene Execution Clock]
+    E --> F[Audience Sentiment & Catharsis Accumulator]
+    F -->|Tension Threshold Exceeded| G[Standing Ovation / Gasps / Encore]
+```
+
+### ⚡ 1. Actor Dialogue & Stage Blocking Sequencer (C++ / JS)
+
+Manages non-blocking spatial transitions and speech delivery cadence:
+
+```javascript
+// High-Precision Dramatic Scene Timeline Kernel
+export class TheatricalSceneExecutor {
+    constructor(sceneData) {
+        this.cues = sceneData.cues;
+        this.currentCueIndex = 0;
+        this.audienceCatharsis = 0.0;
+    }
+
+    step(deltaTimeSeconds, actors, lighting) {
+        if (this.currentCueIndex >= this.cues.length) return { isSceneFinished: true };
+
+        const cue = this.cues[this.currentCueIndex];
+        cue.elapsed += deltaTimeSeconds;
+
+        // Process actor movements
+        if (cue.actorId && actors[cue.actorId]) {
+            actors[cue.actorId].moveTo(cue.targetStageCoord, deltaTimeSeconds);
+        }
+
+        // Trigger lighting transition
+        if (cue.dmxPreset && lighting) {
+            lighting.crossfadeTo(cue.dmxPreset, cue.fadeDuration || 1.5);
+        }
+
+        // Check cue completion
+        if (cue.elapsed >= cue.targetDuration) {
+            this.audienceCatharsis += cue.dramaticImpactWeight || 5.0;
+            this.currentCueIndex++;
+        }
+
+        return {
+            isSceneFinished: false,
+            currentCue: this.currentCueIndex,
+            totalCatharsis: this.audienceCatharsis
+        };
+    }
+}
+```
+
+---
+
+### 💡 2. DMX-512 Stage Lighting Master Channels
+
+| DMX Channel | Parameter | Range / Value | Artistic Function |
+| :--- | :--- | :--- | :--- |
+| **CH 01-03** | Master Key Spotlight (RGB) | $0 - 255$ | Follows protagonist, warm amber tone ($3200	ext{K}$) |
+| **CH 04-06** | Backlight Rim Fill (RGB) | $0 - 255$ | Deep gothic blue separation ($450	ext{nm}$) |
+| **CH 07** | Motorized Fresnels Zoom | $12^\circ - 55^\circ$ | Expands during monologues, tightens on climax |
+| **CH 08** | Ultrasonic Fog Haze Output | $0\% - 100\%$ | Volumetric light beam scattering |
+
 ## 📜 License & Maintainer Standards
 
 Distributed under the **True People's License v2.0** / Open License — Authors: **Jirnyak** & **Adolf Petushkov** (2026). Zero paywalls, zero privatization. Maintainers, contributors, and security auditors are welcome!
