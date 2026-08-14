@@ -1,15 +1,966 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Театр</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber-Theater — Avant-Garde Algorithmic Choreography & Digital Stage</title>
+  <meta name="description" content="Avant-garde cyber-theatrical generative visual performance engine, interactive harmonic actor ribbons, Perlin stage noise, and real-time Lissajous choreographic entropy telemetry.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://jirnyak.github.io/theater/">
+
+  <!-- Open Graph Protocol -->
+  <meta property="og:site_name" content="Cyber-Theater">
+  <meta property="og:title" content="Cyber-Theater — Avant-Garde Algorithmic Choreography & Digital Stage">
+  <meta property="og:description" content="Avant-garde cyber-theatrical generative visual performance engine, interactive harmonic actor ribbons, Perlin stage noise, and real-time Lissajous choreographic entropy telemetry.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jirnyak.github.io/theater/">
+  <meta property="og:image" content="https://jirnyak.github.io/theater/assets/og-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Cyber-Theater Generative Visual Canvas Interface">
+
+  <!-- Twitter Card Protocol -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@Jirnyak">
+  <meta name="twitter:creator" content="@Jirnyak">
+  <meta name="twitter:title" content="Cyber-Theater — Avant-Garde Algorithmic Choreography">
+  <meta name="twitter:description" content="Generative cyber-theatrical visual performance engine with real-time harmonic ribbon dynamics.">
+  <meta name="twitter:image" content="https://jirnyak.github.io/theater/assets/og-preview.png">
+
+  <!-- Inline SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2308040d'/%3E%3Cpath d='M25,35 Q50,15 75,35 Q85,65 50,85 Q15,65 25,35 Z' fill='none' stroke='%23e040fb' stroke-width='4'/%3E%3Ccircle cx='40' cy='42' r='6' fill='%2300e5ff'/%3E%3Ccircle cx='60' cy='42' r='6' fill='%2300e5ff'/%3E%3Cpath d='M35,62 Q50,75 65,62' fill='none' stroke='%23ffd600' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <!-- JSON-LD Structured Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Cyber-Theater",
+    "headline": "Avant-Garde Algorithmic Choreography & Digital Stage",
+    "description": "Generative cyber-theatrical visual performance engine with real-time harmonic ribbon dynamics, interactive spotlight physics, and live Lissajous entropy telemetry.",
+    "url": "https://jirnyak.github.io/theater/",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "All modern web browsers (Desktop & Mobile)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "Jirnyak" }
+  }
+  </script>
+
+  <style>
+    :root {
+      --thtr-bg: #08040d;
+      --thtr-surface: #150a22;
+      --thtr-surface-elevated: #221236;
+      --thtr-surface-glass: rgba(21, 10, 34, 0.82);
+      --thtr-magenta: #e040fb;
+      --thtr-magenta-dim: rgba(224, 64, 251, 0.15);
+      --thtr-cyan: #00e5ff;
+      --thtr-cyan-dim: rgba(0, 229, 255, 0.15);
+      --thtr-gold: #ffd600;
+      --thtr-gold-dim: rgba(255, 214, 0, 0.15);
+      --thtr-text: #f3e5f5;
+      --thtr-muted: #a892b3;
+      --thtr-border: rgba(224, 64, 251, 0.25);
+      --thtr-glow-magenta: 0 0 25px rgba(224, 64, 251, 0.45);
+      --thtr-glow-cyan: 0 0 25px rgba(0, 229, 255, 0.45);
+      --thtr-radius-sm: 6px;
+      --thtr-radius-md: 12px;
+      --thtr-radius-lg: 20px;
+      --thtr-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --thtr-font-mono: "Cascadia Code", "Fira Code", Consolas, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--thtr-bg);
+      color: var(--thtr-text);
+      font-family: var(--thtr-font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Cyber-Theater Header */
+    .thtr-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(8, 4, 13, 0.9);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--thtr-border);
+      height: 64px;
+    }
+    .thtr-header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      height: 100%;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .thtr-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--thtr-text);
+    }
+    .thtr-mask-glyph {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--thtr-surface);
+      border: 1px solid var(--thtr-magenta);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--thtr-magenta);
+      box-shadow: var(--thtr-glow-magenta);
+      font-size: 1.2rem;
+    }
+    .thtr-brand-text h1 {
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      color: #fff;
+    }
+    .thtr-brand-text span {
+      font-size: 0.72rem;
+      color: var(--thtr-magenta);
+      font-family: var(--thtr-font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .thtr-nav-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .thtr-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 12px;
+      border-radius: 999px;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      color: var(--thtr-cyan);
+      font-size: 0.75rem;
+      font-family: var(--thtr-font-mono);
+    }
+    .thtr-pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--thtr-cyan);
+      box-shadow: 0 0 8px var(--thtr-cyan);
+      animation: thtrPulse 1.8s infinite;
+    }
+    @keyframes thtrPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.5; }
+    }
+
+    /* Container */
+    .thtr-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Stage Canvas Containment Box */
+    .thtr-stage-card {
+      background: var(--thtr-surface);
+      border: 1px solid var(--thtr-border);
+      border-radius: var(--thtr-radius-lg);
+      box-shadow: var(--thtr-glow-magenta);
+      padding: 20px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .thtr-stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .thtr-stage-title h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .thtr-stage-title p {
+      font-size: 0.85rem;
+      color: var(--thtr-muted);
+    }
+    .thtr-stage-wrapper {
+      width: 100%;
+      height: 480px;
+      background: #040207;
+      border: 1px solid rgba(224, 64, 251, 0.3);
+      border-radius: var(--thtr-radius-md);
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    #thtr-stage-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .thtr-stage-overlay-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 16px;
+      font-size: 0.75rem;
+      color: var(--thtr-muted);
+      font-family: var(--thtr-font-mono);
+      pointer-events: none;
+      background: rgba(8, 4, 13, 0.7);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Interactive Stage Controls Deck */
+    .thtr-controls-deck {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      background: var(--thtr-surface-elevated);
+      border: 1px solid var(--thtr-border);
+      border-radius: var(--thtr-radius-md);
+      padding: 16px;
+    }
+    .thtr-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .thtr-control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--thtr-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .thtr-control-label span:last-child {
+      font-family: var(--thtr-font-mono);
+      color: var(--thtr-cyan);
+    }
+    .thtr-range-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #08040d;
+      border-radius: 3px;
+      outline: none;
+      border: 1px solid var(--thtr-border);
+    }
+    .thtr-range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--thtr-magenta);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--thtr-magenta);
+    }
+
+    /* Harmonic Performance Modes Bar */
+    .thtr-modes-row {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .thtr-mode-btn {
+      flex: 1;
+      min-width: 180px;
+      background: var(--thtr-surface-elevated);
+      border: 1px solid var(--thtr-border);
+      color: var(--thtr-text);
+      padding: 10px 14px;
+      border-radius: var(--thtr-radius-md);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      text-align: left;
+    }
+    .thtr-mode-btn:hover {
+      border-color: var(--thtr-cyan);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+    }
+    .thtr-mode-btn.active {
+      border-color: var(--thtr-magenta);
+      background: rgba(224, 64, 251, 0.18);
+      box-shadow: var(--thtr-glow-magenta);
+    }
+    .thtr-mode-name { color: #fff; font-size: 0.9rem; }
+    .thtr-mode-desc { font-size: 0.72rem; color: var(--thtr-muted); font-weight: 400; }
+
+    /* Dynamic Telemetry & Lissajous Oscilloscope */
+    .thtr-telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      margin-top: 28px;
+    }
+    @media (max-width: 900px) {
+      .thtr-telemetry-grid { grid-template-columns: 1fr; }
+    }
+
+    .thtr-telemetry-card {
+      background: var(--thtr-surface);
+      border: 1px solid var(--thtr-border);
+      border-radius: var(--thtr-radius-lg);
+      padding: 22px;
+    }
+    .thtr-telemetry-card h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--thtr-cyan);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .thtr-kpi-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .thtr-kpi-box {
+      background: var(--thtr-surface-elevated);
+      border: 1px solid var(--thtr-border);
+      border-radius: var(--thtr-radius-md);
+      padding: 12px 14px;
+    }
+    .thtr-kpi-lbl {
+      font-size: 0.72rem;
+      color: var(--thtr-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .thtr-kpi-num {
+      font-family: var(--thtr-font-mono);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--thtr-magenta);
+      margin-top: 2px;
+    }
+    .thtr-oscillo-wrapper {
+      width: 100%;
+      height: 200px;
+      background: #040207;
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      border-radius: var(--thtr-radius-md);
+      overflow: hidden;
+      position: relative;
+    }
+    #thtr-oscillo-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Algorithmic Specs */
+    .thtr-specs-card {
+      background: var(--thtr-surface-elevated);
+      border: 1px solid var(--thtr-border);
+      border-radius: var(--thtr-radius-md);
+      padding: 16px;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      color: var(--thtr-text);
+    }
+    .thtr-code-snippet {
+      background: #040207;
+      border: 1px solid var(--thtr-border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: var(--thtr-font-mono);
+      font-size: 0.75rem;
+      color: #7dd3fc;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    /* Footer */
+    .thtr-footer {
+      margin-top: 48px;
+      border-top: 1px solid var(--thtr-border);
+      padding: 32px 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--thtr-muted);
+    }
+    .thtr-footer a {
+      color: var(--thtr-cyan);
+      text-decoration: none;
+    }
+  </style>
+
+<style id="mobile-overflow-guard">
+  html, body { max-width: 100vw !important; overflow-x: hidden !important; width: 100% !important; box-sizing: border-box !important; }
+  *, *::before, *::after { box-sizing: border-box !important; }
+  pre, code, table, .table-wrap, .code-box, .overflow-auto { max-width: 100% !important; overflow-x: auto !important; }
+  img, canvas, svg { max-width: 100% !important; height: auto !important; }
+</style>
+
 </head>
-
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
 
+  <!-- Header -->
+  <header class="thtr-header">
+    <div class="thtr-header-inner">
+      <a href="./" class="thtr-brand">
+        <div class="thtr-mask-glyph">🎭</div>
+        <div class="thtr-brand-text">
+          <h1>Cyber-Theater</h1>
+          <span>Avant-Garde Algorithmic Choreography</span>
+        </div>
+      </a>
+      <div class="thtr-nav-status">
+        <div class="thtr-status-pill">
+          <span class="thtr-pulse-dot"></span>
+          <span>1,000 ACTOR HARMONICS ONLINE</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="thtr-container">
+
+    <!-- Interactive Generative Stage Card -->
+    <section class="thtr-stage-card">
+      <div class="thtr-stage-header">
+        <div class="thtr-stage-title">
+          <h2>Generative Algorithmic Choreography Stage</h2>
+          <p>Move mouse / touch to cast interactive spotlight beams. Click stage to trigger chromatic confetti bursts.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="btn-burst" class="thtr-mode-btn" style="min-width:auto; padding:8px 16px; align-items:center; border-color:var(--thtr-gold); color:var(--thtr-gold);">✨ Trigger Glitch Burst</button>
+          <button id="btn-reset-stage" class="thtr-mode-btn" style="min-width:auto; padding:8px 16px; align-items:center;">↺ Re-seed Stage</button>
+        </div>
+      </div>
+
+      <!-- Stage Canvas -->
+      <div class="thtr-stage-wrapper" id="stage-wrapper">
+        <canvas id="thtr-stage-canvas" width="1200" height="480" style="width:100%; height:100%;"></canvas>
+        <div class="thtr-stage-overlay-hint">
+          Interactive Spotlight: [X: <span id="pos-x">0</span>, Y: <span id="pos-y">0</span>] &bull; Mode: <span id="mode-label" style="color:var(--thtr-magenta);">CYBER_HAMLET</span>
+        </div>
+      </div>
+
+      <!-- 4 Harmonic Modes Selector -->
+      <div class="thtr-modes-row">
+        <button class="thtr-mode-btn active" data-mode="hamlet">
+          <span class="thtr-mode-name">1. Cyber-Hamlet</span>
+          <span class="thtr-mode-desc">Ratio 3:2 harmonic phase orbits, cyan-magenta gradient ribbons.</span>
+        </button>
+        <button class="thtr-mode-btn" data-mode="sisyphus">
+          <span class="thtr-mode-name">2. Sisyphus Tragedy</span>
+          <span class="thtr-mode-desc">Vortex gravitational acceleration ($F \propto 1/d$) &amp; turbulence.</span>
+        </button>
+        <button class="thtr-mode-btn" data-mode="glitch">
+          <span class="thtr-mode-name">3. Glitch Rave</span>
+          <span class="thtr-mode-desc">High-frequency Perlin noise, randomized phase jumps &amp; strobe bursts.</span>
+        </button>
+        <button class="thtr-mode-btn" data-mode="dionysus">
+          <span class="thtr-mode-name">4. Dionysian Chorus</span>
+          <span class="thtr-mode-desc">5-petal radial bloom ($r = a + b\cos 5\theta$), amber footlight glow.</span>
+        </button>
+      </div>
+
+      <!-- Interactive Controls Deck -->
+      <div class="thtr-controls-deck">
+        <div class="thtr-control-group">
+          <div class="thtr-control-label">
+            <span>Stage Chaos / Entropy (E)</span>
+            <span id="val-entropy">1.20</span>
+          </div>
+          <input type="range" class="thtr-range-slider" id="slider-entropy" min="0.1" max="4.0" step="0.05" value="1.2">
+        </div>
+
+        <div class="thtr-control-group">
+          <div class="thtr-control-label">
+            <span>Actor Ribbon Count</span>
+            <span id="val-actors">1,000</span>
+          </div>
+          <input type="range" class="thtr-range-slider" id="slider-actors" min="200" max="2000" step="100" value="1000">
+        </div>
+
+        <div class="thtr-control-group">
+          <div class="thtr-control-label">
+            <span>Trail History Length</span>
+            <span id="val-trail">14 pts</span>
+          </div>
+          <input type="range" class="thtr-range-slider" id="slider-trail" min="4" max="30" step="1" value="14">
+        </div>
+
+        <div class="thtr-control-group">
+          <div class="thtr-control-label">
+            <span>Spotlight Magnetism</span>
+            <span id="val-spotlight">180 px</span>
+          </div>
+          <input type="range" class="thtr-range-slider" id="slider-spotlight" min="50" max="350" step="10" value="180">
+        </div>
+      </div>
+    </section>
+
+    <!-- Telemetry & Lissajous Phase Oscilloscope Grid -->
+    <div class="thtr-telemetry-grid">
+      
+      <!-- Left: Telemetry Data & Live Entropy -->
+      <section class="thtr-telemetry-card">
+        <h3>
+          <span>Stage Physics &amp; Harmonic Telemetry</span>
+          <span style="font-size:0.75rem; font-family:var(--thtr-font-mono); color:var(--thtr-magenta);">60 FPS ACTIVE</span>
+        </h3>
+
+        <div class="thtr-kpi-stack">
+          <div class="thtr-kpi-box">
+            <div class="thtr-kpi-lbl">Shannon Stage Entropy (H)</div>
+            <div class="thtr-kpi-num" id="kpi-entropy">3.42 nats</div>
+          </div>
+          <div class="thtr-kpi-box">
+            <div class="thtr-kpi-lbl">Fourier Phase Coherence</div>
+            <div class="thtr-kpi-num" id="kpi-coherence" style="color:var(--thtr-cyan);">84.6%</div>
+          </div>
+          <div class="thtr-kpi-box">
+            <div class="thtr-kpi-lbl">Kinetic Ribbon Velocity</div>
+            <div class="thtr-kpi-num" id="kpi-velocity" style="color:var(--thtr-gold);">482 px/s</div>
+          </div>
+          <div class="thtr-kpi-box">
+            <div class="thtr-kpi-lbl">Active Stage Glitch Nodes</div>
+            <div class="thtr-kpi-num" id="kpi-particles">1,000</div>
+          </div>
+        </div>
+
+        <div class="thtr-specs-card">
+          <strong>Mathematical Dynamics:</strong>
+          <p>
+            Generative ribbon positions are computed via coupled Lissajous harmonics modulated by pseudo-Perlin 2D spatial drift and inverse-distance spotlight vector fields.
+          </p>
+          <div class="thtr-code-snippet">
+x(t+1) = x(t) + A*cos(n*w*t + phi_x) + Noise(x,y,t)*E<br>
+y(t+1) = y(t) + B*sin(m*w*t + phi_y) + SpotlightSwirl(x,y)
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Lissajous Phase Coherence Oscilloscope -->
+      <section class="thtr-telemetry-card">
+        <h3>
+          <span>Lissajous Phase Coherence Oscilloscope</span>
+          <span style="font-size:0.75rem; font-family:var(--thtr-font-mono); color:var(--thtr-cyan);">HARMONIC TRACE</span>
+        </h3>
+
+        <div class="thtr-oscillo-wrapper">
+          <canvas id="thtr-oscillo-canvas" width="600" height="200" style="width:100%; height:100%;"></canvas>
+        </div>
+
+        <div style="margin-top:14px; font-size:0.8rem; color:var(--thtr-muted); display:flex; justify-content:space-between;">
+          <span>Harmonic Ratio: <strong style="color:#fff;" id="disp-ratio">3:2 Orbital</strong></span>
+          <span>Resonance: <strong style="color:var(--thtr-cyan);" id="disp-resonance">Optimal</strong></span>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="thtr-footer">
+      <p>Cyber-Theater &bull; Avant-Garde Generative Performance Engine &bull; Built with Vanilla ES6 &amp; Canvas 2D &bull; <a href="https://github.com/Jirnyak/theater" target="_blank">GitHub Repository</a></p>
+    </footer>
+
+  </main>
+
+  <!-- Complete Stage Engine Script -->
+  <script>
+    (function() {
+      // --- Stage Engine Variables ---
+      const stageCanvas = document.getElementById('thtr-stage-canvas');
+      const stageCtx = stageCanvas.getContext('2d');
+      const oscilloCanvas = document.getElementById('thtr-oscillo-canvas');
+      const oscilloCtx = oscilloCanvas.getContext('2d');
+
+      const sliderEntropy = document.getElementById('slider-entropy');
+      const sliderActors = document.getElementById('slider-actors');
+      const sliderTrail = document.getElementById('slider-trail');
+      const sliderSpotlight = document.getElementById('slider-spotlight');
+
+      const valEntropy = document.getElementById('val-entropy');
+      const valActors = document.getElementById('val-actors');
+      const valTrail = document.getElementById('val-trail');
+      const valSpotlight = document.getElementById('val-spotlight');
+
+      const posX = document.getElementById('pos-x');
+      const posY = document.getElementById('pos-y');
+      const modeLabel = document.getElementById('mode-label');
+      const kpiEntropy = document.getElementById('kpi-entropy');
+      const kpiCoherence = document.getElementById('kpi-coherence');
+      const kpiVelocity = document.getElementById('kpi-velocity');
+      const kpiParticles = document.getElementById('kpi-particles');
+      const dispRatio = document.getElementById('disp-ratio');
+      const dispResonance = document.getElementById('disp-resonance');
+
+      let currentMode = 'hamlet';
+      let entropy = 1.2;
+      let actorCount = 1000;
+      let trailLength = 14;
+      let spotlightRadius = 180;
+      let mouseX = -1000;
+      let mouseY = -1000;
+      let isMouseDown = false;
+      let simTime = 0;
+
+      // Particle Actor Array
+      let actors = [];
+      let burstParticles = [];
+
+      class ActorRibbon {
+        constructor(w, h) {
+          this.reset(w, h);
+        }
+
+        reset(w, h) {
+          this.x = Math.random() * (w || 800);
+          this.y = Math.random() * (h || 500);
+          this.vx = (Math.random() - 0.5) * 1.5;
+          this.vy = (Math.random() - 0.5) * 1.5;
+          this.phaseX = Math.random() * Math.PI * 2;
+          this.phaseY = Math.random() * Math.PI * 2;
+          this.speed = 0.01 + Math.random() * 0.02;
+          this.baseHue = Math.random() > 0.5 ? 290 : 185; // Magenta or Cyan
+          this.trail = [];
+        }
+
+        update(w, h, t, mode) {
+          this.trail.push({ x: this.x, y: this.y });
+          if (this.trail.length > trailLength) {
+            this.trail.shift();
+          }
+
+          let harmonicX = 0;
+          let harmonicY = 0;
+
+          if (mode === 'hamlet') {
+            harmonicX = Math.cos(3 * t * this.speed + this.phaseX) * 3.5;
+            harmonicY = Math.sin(2 * t * this.speed + this.phaseY) * 3.5;
+          } else if (mode === 'sisyphus') {
+            const dx = w / 2 - this.x;
+            const dy = h / 2 - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) + 10;
+            harmonicX = (dx / dist) * 2.5 - (dy / dist) * 3.0;
+            harmonicY = (dy / dist) * 2.5 + (dx / dist) * 3.0;
+          } else if (mode === 'glitch') {
+            harmonicX = Math.cos(7 * t * this.speed + this.phaseX) * 5.0 + (Math.random() - 0.5) * 6;
+            harmonicY = Math.sin(5 * t * this.speed + this.phaseY) * 5.0 + (Math.random() - 0.5) * 6;
+          } else if (mode === 'dionysus') {
+            const angle = t * this.speed * 2 + this.phaseX;
+            const r = Math.cos(5 * angle) * 4;
+            harmonicX = Math.cos(angle) * r * 2.0;
+            harmonicY = Math.sin(angle) * r * 2.0;
+          }
+
+          // Pseudo-Perlin stage noise
+          const noiseX = Math.sin(this.y * 0.01 + t * 0.5) * entropy * 1.5;
+          const noiseY = Math.cos(this.x * 0.01 + t * 0.5) * entropy * 1.5;
+
+          this.x += this.vx + harmonicX + noiseX;
+          this.y += this.vy + harmonicY + noiseY;
+
+          // Interactive Spotlight Interaction
+          if (mouseX > 0 && mouseY > 0) {
+            const sDx = mouseX - this.x;
+            const sDy = mouseY - this.y;
+            const sDist = Math.sqrt(sDx * sDx + sDy * sDy);
+            if (sDist < spotlightRadius) {
+              const force = (1 - sDist / spotlightRadius) * 4.5;
+              this.x += (sDx / sDist) * force;
+              this.y += (sDy / sDist) * force;
+              this.baseHue = 45; // Turn Gold under spotlight
+            }
+          }
+
+          // Boundary Wrap
+          if (this.x < -20) this.x = w + 20;
+          if (this.x > w + 20) this.x = -20;
+          if (this.y < -20) this.y = h + 20;
+          if (this.y > h + 20) this.y = -20;
+        }
+
+        draw(ctx) {
+          if (this.trail.length < 2) return;
+          ctx.beginPath();
+          ctx.moveTo(this.trail[0].x, this.trail[0].y);
+          for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
+          ctx.strokeStyle = `hsla(${this.baseHue}, 90%, 65%, 0.4)`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      class GlitchParticle {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          const angle = Math.random() * Math.PI * 2;
+          const spd = Math.random() * 8 + 3;
+          this.vx = Math.cos(angle) * spd;
+          this.vy = Math.sin(angle) * spd;
+          this.life = 1.0;
+          this.decay = 0.02 + Math.random() * 0.03;
+          this.color = Math.random() > 0.5 ? '#e040fb' : (Math.random() > 0.5 ? '#00e5ff' : '#ffd600');
+          this.size = Math.random() * 4 + 2;
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vx *= 0.94;
+          this.vy *= 0.94;
+          this.life -= this.decay;
+        }
+        draw(ctx) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, this.life);
+          ctx.fillStyle = this.color;
+          ctx.fillRect(this.x, this.y, this.size, this.size);
+          ctx.restore();
+        }
+      }
+
+      function initActors() {
+        const w = stageCanvas.width;
+        const h = stageCanvas.height;
+        actors = [];
+        for (let i = 0; i < actorCount; i++) {
+          actors.push(new ActorRibbon(w, h));
+        }
+        kpiParticles.textContent = actorCount.toLocaleString();
+      }
+
+      function resizeStageCanvas() {
+        if (!stageCanvas.parentElement) return;
+        stageCanvas.width = stageCanvas.parentElement.clientWidth;
+        stageCanvas.height = stageCanvas.parentElement.clientHeight;
+        initActors();
+      }
+      window.addEventListener('resize', resizeStageCanvas);
+
+      function resizeOscilloCanvas() {
+        if (!oscilloCanvas.parentElement) return;
+        oscilloCanvas.width = oscilloCanvas.parentElement.clientWidth;
+        oscilloCanvas.height = oscilloCanvas.parentElement.clientHeight;
+      }
+      window.addEventListener('resize', resizeOscilloCanvas);
+
+      // Mouse & Touch Spotlight Tracking
+      stageCanvas.addEventListener('mousemove', (e) => {
+        const rect = stageCanvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+        posX.textContent = Math.round(mouseX);
+        posY.textContent = Math.round(mouseY);
+      });
+
+      stageCanvas.addEventListener('mouseleave', () => {
+        mouseX = -1000;
+        mouseY = -1000;
+        posX.textContent = '0';
+        posY.textContent = '0';
+      });
+
+      stageCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          const rect = stageCanvas.getBoundingClientRect();
+          mouseX = e.touches[0].clientX - rect.left;
+          mouseY = e.touches[0].clientY - rect.top;
+          posX.textContent = Math.round(mouseX);
+          posY.textContent = Math.round(mouseY);
+        }
+      });
+
+      function spawnGlitchBurst(x, y) {
+        for (let i = 0; i < 70; i++) {
+          burstParticles.push(new GlitchParticle(x, y));
+        }
+      }
+
+      stageCanvas.addEventListener('click', (e) => {
+        const rect = stageCanvas.getBoundingClientRect();
+        spawnGlitchBurst(e.clientX - rect.left, e.clientY - rect.top);
+      });
+
+      document.getElementById('btn-burst').addEventListener('click', () => {
+        const w = stageCanvas.width;
+        const h = stageCanvas.height;
+        spawnGlitchBurst(w / 2, h / 2);
+      });
+
+      document.getElementById('btn-reset-stage').addEventListener('click', () => {
+        initActors();
+      });
+
+      // Harmonic Modes Switching
+      document.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentMode = btn.dataset.mode;
+          modeLabel.textContent = currentMode.toUpperCase();
+
+          if (currentMode === 'hamlet') {
+            dispRatio.textContent = '3:2 Orbital';
+            dispResonance.textContent = 'Optimal (84.6%)';
+          } else if (currentMode === 'sisyphus') {
+            dispRatio.textContent = '1:1 Gravitational';
+            dispResonance.textContent = 'Vortex (62.1%)';
+          } else if (currentMode === 'glitch') {
+            dispRatio.textContent = '7:5 Stroboscopic';
+            dispResonance.textContent = 'Turbulent (94.8%)';
+          } else if (currentMode === 'dionysus') {
+            dispRatio.textContent = '5:1 Radial Bloom';
+            dispResonance.textContent = 'Harmonic (91.2%)';
+          }
+        });
+      });
+
+      // Slider Bindings
+      sliderEntropy.addEventListener('input', () => {
+        entropy = parseFloat(sliderEntropy.value);
+        valEntropy.textContent = entropy.toFixed(2);
+      });
+
+      sliderActors.addEventListener('input', () => {
+        actorCount = parseInt(sliderActors.value, 10);
+        valActors.textContent = actorCount.toLocaleString();
+        initActors();
+      });
+
+      sliderTrail.addEventListener('input', () => {
+        trailLength = parseInt(sliderTrail.value, 10);
+        valTrail.textContent = `${trailLength} pts`;
+      });
+
+      sliderSpotlight.addEventListener('input', () => {
+        spotlightRadius = parseInt(sliderSpotlight.value, 10);
+        valSpotlight.textContent = `${spotlightRadius} px`;
+      });
+
+      // --- 60 FPS Main Simulation Loop ---
+      function animate() {
+        simTime += 0.05;
+        const w = stageCanvas.width;
+        const h = stageCanvas.height;
+
+        // Dim fade background for ribbon trails
+        stageCtx.fillStyle = 'rgba(4, 2, 7, 0.15)';
+        stageCtx.fillRect(0, 0, w, h);
+
+        // Draw Interactive Spotlight
+        if (mouseX > 0 && mouseY > 0) {
+          const grad = stageCtx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, spotlightRadius);
+          grad.addColorStop(0, 'rgba(0, 229, 255, 0.15)');
+          grad.addColorStop(0.6, 'rgba(224, 64, 251, 0.08)');
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          stageCtx.fillStyle = grad;
+          stageCtx.beginPath();
+          stageCtx.arc(mouseX, mouseY, spotlightRadius, 0, Math.PI * 2);
+          stageCtx.fill();
+        }
+
+        // Update & Draw Ribbon Actors
+        actors.forEach(actor => {
+          actor.update(w, h, simTime, currentMode);
+          actor.draw(stageCtx);
+        });
+
+        // Update & Draw Burst Glitch Particles
+        for (let i = burstParticles.length - 1; i >= 0; i--) {
+          const p = burstParticles[i];
+          p.update();
+          p.draw(stageCtx);
+          if (p.life <= 0) {
+            burstParticles.splice(i, 1);
+          }
+        }
+
+        // Draw Oscilloscope
+        drawOscilloscope();
+
+        requestAnimationFrame(animate);
+      }
+
+      // --- Lissajous Oscilloscope Renderer ---
+      function drawOscilloscope() {
+        const ow = oscilloCanvas.width;
+        const oh = oscilloCanvas.height;
+        oscilloCtx.fillStyle = '#040207';
+        oscilloCtx.fillRect(0, 0, ow, oh);
+
+        // Grid
+        oscilloCtx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
+        oscilloCtx.lineWidth = 1;
+        oscilloCtx.beginPath();
+        oscilloCtx.moveTo(ow / 2, 0); oscilloCtx.lineTo(ow / 2, oh);
+        oscilloCtx.moveTo(0, oh / 2); oscilloCtx.lineTo(ow, oh / 2);
+        oscilloCtx.stroke();
+
+        // Lissajous curve
+        oscilloCtx.beginPath();
+        oscilloCtx.strokeStyle = currentMode === 'hamlet' ? '#e040fb' : (currentMode === 'sisyphus' ? '#ffd600' : '#00e5ff');
+        oscilloCtx.lineWidth = 2;
+        oscilloCtx.shadowColor = oscilloCtx.strokeStyle;
+        oscilloCtx.shadowBlur = 8;
+
+        const points = 180;
+        const n = currentMode === 'hamlet' ? 3 : (currentMode === 'sisyphus' ? 1 : (currentMode === 'glitch' ? 7 : 5));
+        const m = currentMode === 'hamlet' ? 2 : (currentMode === 'sisyphus' ? 1 : (currentMode === 'glitch' ? 5 : 1));
+
+        for (let i = 0; i <= points; i++) {
+          const phi = (i / points) * Math.PI * 2;
+          const x = ow / 2 + Math.cos(n * phi + simTime * 0.8) * (ow * 0.38);
+          const y = oh / 2 + Math.sin(m * phi + simTime * 0.5) * (oh * 0.38);
+          if (i === 0) oscilloCtx.moveTo(x, y);
+          else oscilloCtx.lineTo(x, y);
+        }
+        oscilloCtx.stroke();
+        oscilloCtx.shadowBlur = 0;
+      }
+
+      // Live Telemetry KPIs
+      setInterval(() => {
+        const ent = (3.2 + Math.sin(simTime * 0.3) * 0.4 + entropy * 0.2).toFixed(2);
+        const coh = Math.min(99.4, Math.max(55.0, 85 + Math.cos(simTime * 0.2) * 8 - entropy * 3)).toFixed(1);
+        const vel = Math.round(420 + Math.sin(simTime * 0.4) * 80 + (mouseX > 0 ? 120 : 0));
+
+        kpiEntropy.textContent = `${ent} nats`;
+        kpiCoherence.textContent = `${coh}%`;
+        kpiVelocity.textContent = `${vel} px/s`;
+      }, 500);
+
+      resizeStageCanvas();
+      resizeOscilloCanvas();
+      animate();
+    })();
+  </script>
+</body>
 </html>
