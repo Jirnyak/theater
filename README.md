@@ -187,7 +187,7 @@ The section below contains 100% of the original developer documentation, specifi
 
 [![License](https://img.shields.io/badge/License-Open%20Creative-blueviolet?style=for-the-badge)](LICENSE.md)
 [![Language](https://img.shields.io/badge/Made%20with-JavaScript-yellow?style=for-the-badge&logo=javascript)]()
-[![Open Source](https://img.shields.io/badge/Open%20Source-❤️-brightgreen?style=for-the-badge)]()
+[![Open Source](https://img.shields.io/badge/Open_Source-True_Community-brightgreen?style=for-the-badge)]()
 
 > **Experimental engine for interactive cyber-theater, generative visual performances and audio-reactive stage design.**
 
